@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ตั้งค่าระบบออมทรัพย์นักเรียน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#c8521c; --primary-2:#fdf1ea; --line:#e8e2dc; --bg:#faf7f4;
+    --surface:#fff; --text:#2f2a26; --muted:#8b8179; --ok:#2e9e5b; --err:#d64545;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;line-height:1.7}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+  h1{font-size:1.5rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:22px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:1.05rem;margin:0 0 4px}
+  .hint{color:var(--muted);font-size:.85rem;margin:0 0 12px}
+  textarea,input[type=text],input[type=password]{
+    width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:.95rem;background:#fff;color:var(--text)}
+  textarea{min-height:170px;resize:vertical;line-height:1.8}
+  textarea:focus,input:focus{outline:none;border-color:var(--primary)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  button{padding:11px 20px;border:none;border-radius:10px;background:var(--primary);color:#fff;
+    font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
+  button:disabled{opacity:.55;cursor:default}
+  label.chk{display:flex;gap:8px;align-items:flex-start;font-size:.88rem;color:var(--muted);cursor:pointer}
+  label.chk input{margin-top:5px}
+  .msg{margin-top:12px;font-size:.9rem;font-weight:600;white-space:pre-line}
+  .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:6px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:700;font-size:.8rem}
+  td.r,th.r{text-align:right}
+  .warn{background:#fff8e6;border:1px solid #f0dba8;border-radius:12px;padding:14px 16px;font-size:.88rem;margin-bottom:16px}
+  code{background:var(--primary-2);padding:1px 6px;border-radius:5px;font-size:.85em}
+  a{color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ตั้งค่าระบบออมทรัพย์นักเรียน</h1>
+  <p class="sub">หน้านี้ใช้ตอนติดตั้งครั้งแรก — เพิ่มรายชื่อนักเรียนและตั้งรหัสครู</p>
+
+  <div class="warn">
+    หน้านี้ <b>ไม่มีการล็อกอิน</b> ใครเปิดก็แก้ข้อมูลได้ ถ้า deploy ขึ้นเว็บแล้ว
+    แนะนำให้ใช้เสร็จแล้วลบไฟล์ <code>setup.html</code> ออกจากเว็บ
+    (เก็บไว้ในเครื่อง แล้วเปิดใหม่เมื่อต้องใช้)
+  </div>
+
+  <div class="card">
+    <h2>1 · รายชื่อนักเรียน</h2>
+    <p class="hint">
+      วางรายชื่อทีละบรรทัด เลขที่จะไล่จาก 1 ตามลำดับที่วาง<br>
+      หรือกำหนดเลขที่เองด้วยรูปแบบ <code>5 สมชาย ใจดี</code> (เลขที่ เว้นวรรค ชื่อ)
+    </p>
+    <textarea id="names" placeholder="สมชาย ใจดี&#10;สมหญิง รักเรียน&#10;อารีย์ มานะ"></textarea>
+    <label class="chk" style="margin-top:12px">
+      <input type="checkbox" id="overwrite">
+      <span>เขียนทับชื่อของเลขที่ที่มีอยู่แล้ว (ยอดเงินคงเดิม ไม่ถูกแตะ)<br>
+      ถ้าไม่ติ๊ก เลขที่ที่มีอยู่แล้วจะถูกข้าม</span>
+    </label>
+    <div class="row">
+      <button id="btnSave">บันทึกรายชื่อ</button>
+      <button class="ghost" id="btnPreview">ดูตัวอย่างก่อน</button>
+    </div>
+    <div class="msg" id="msg1"></div>
+    <div id="preview"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · รหัสผ่านครู</h2>
+    <p class="hint">ระบบเก็บเฉพาะค่า hash (SHA-256) ไม่ได้เก็บตัวรหัส — ตั้งใหม่ได้ตลอด</p>
+    <input type="password" id="pw" placeholder="รหัสใหม่ อย่างน้อย 4 ตัว" autocomplete="new-password">
+    <div class="row"><button id="btnPw">ตั้งรหัสผ่าน</button></div>
+    <div class="msg" id="msg2"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · ข้อมูลที่มีอยู่ตอนนี้</h2>
+    <div class="row" style="margin-top:0"><button class="ghost" id="btnLoad">โหลดรายชื่อปัจจุบัน</button></div>
+    <div id="list"></div>
+  </div>
+
+  <p class="sub" style="margin-top:26px">เสร็จแล้วเปิดใช้งานจริงที่ <a href="index.html">index.html</a></p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+  if (!window.FIREBASE_CONFIG || /YOUR_/.test(window.FIREBASE_CONFIG.apiKey || 'YOUR_')) {
+    document.body.innerHTML = '<div class="wrap"><h1>ยังไม่ได้ตั้งค่า Firebase</h1>' +
+      '<p>เปิดไฟล์ <code>firebase-config.js</code> แล้วใส่ค่าโปรเจกต์ของคุณก่อน (ดู README.md)</p></div>';
+    return;
+  }
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  var db     = firebase.firestore();
+  var appDoc = db.collection('savings').doc('app');
+  var colStu = appDoc.collection('students');
+
+  function $(id){ return document.getElementById(id); }
+  function say(el, text, cls){ var m = $(el); m.textContent = text; m.className = 'msg ' + (cls || ''); }
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+    });
+  }
+
+  /* แปลงข้อความในกล่องเป็นรายการ {no, name} */
+  function parseNames(){
+    var lines = $('names').value.split('\n')
+      .map(function(l){ return l.trim(); })
+      .filter(function(l){ return l.length; });
+    var auto = 0, out = [], seen = {};
+    lines.forEach(function(line){
+      var m = line.match(/^(\d{1,3})[\s.\-)]+(.+)$/);
+      var no, name;
+      if (m) { no = Number(m[1]); name = m[2].trim(); }
+      else   { no = ++auto; name = line; while (seen[no]) no = ++auto; }
+      if (seen[no]) return;          /* เลขที่ซ้ำ ใช้บรรทัดแรกที่เจอ */
+      seen[no] = true;
+      out.push({ no: no, name: name });
+    });
+    return out.sort(function(a, b){ return a.no - b.no; });
+  }
+
+  function renderTable(rows, withBalance){
+    if (!rows.length) return '<p class="hint">ยังไม่มีข้อมูล</p>';
+    return '<table><thead><tr><th style="width:60px">เลขที่</th><th>ชื่อ-สกุล</th>' +
+      (withBalance ? '<th class="r">ยอดคงเหลือ</th>' : '') + '</tr></thead><tbody>' +
+      rows.map(function(s){
+        return '<tr><td>' + s.no + '</td><td>' + esc(s.name) + '</td>' +
+          (withBalance ? '<td class="r">฿' + (Number(s.balance) || 0).toLocaleString() + '</td>' : '') +
+          '</tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  $('btnPreview').addEventListener('click', function(){
+    var rows = parseNames();
+    say('msg1', rows.length ? 'อ่านได้ ' + rows.length + ' คน' : 'ยังไม่ได้วางรายชื่อ', rows.length ? 'ok' : 'err');
+    $('preview').innerHTML = renderTable(rows, false);
+  });
+
+  $('btnSave').addEventListener('click', function(){
+    var rows = parseNames();
+    if (!rows.length) { say('msg1', 'ยังไม่ได้วางรายชื่อ', 'err'); return; }
+    var overwrite = $('overwrite').checked;
+    var confirmMsg = 'จะบันทึกนักเรียน ' + rows.length + ' คน\n' +
+      (overwrite ? 'เลขที่ที่มีอยู่แล้วจะถูกเขียนทับชื่อ (ยอดเงินคงเดิม)'
+                 : 'เลขที่ที่มีอยู่แล้วจะถูกข้าม') + '\nดำเนินการต่อ?';
+    if (!confirm(confirmMsg)) return;
+
+    var btn = this;
+    btn.disabled = true;
+    say('msg1', 'กำลังบันทึก...', '');
+
+    colStu.get().then(function(snap){
+      var existing = {};
+      snap.docs.forEach(function(d){ existing[d.id] = d.data(); });
+
+      var batch = db.batch(), added = 0, updated = 0, skipped = 0;
+      rows.forEach(function(s){
+        var id = String(s.no);
+        if (!existing[id]) {
+          batch.set(colStu.doc(id), { no: s.no, name: s.name, balance: 0 });
+          added++;
+        } else if (overwrite) {
+          batch.update(colStu.doc(id), { name: s.name });   /* ยอดเงินไม่ถูกแตะ */
+          updated++;
+        } else {
+          skipped++;
+        }
+      });
+
+      return batch.commit().then(function(){
+        say('msg1', 'บันทึกเรียบร้อย — เพิ่มใหม่ ' + added + ' คน · แก้ชื่อ ' + updated +
+                    ' คน · ข้าม ' + skipped + ' คน', 'ok');
+        btn.disabled = false;
+        $('btnLoad').click();
+      });
+    }).catch(function(e){
+      say('msg1', 'บันทึกไม่สำเร็จ: ' + (e.message || e) +
+                  '\n(ตรวจว่า deploy firestore.rules แล้วหรือยัง)', 'err');
+      btn.disabled = false;
+    });
+  });
+
+  function sha256hex(str){
+    var buf = new TextEncoder().encode(String(str));
+    return crypto.subtle.digest('SHA-256', buf).then(function(h){
+      return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+    });
+  }
+
+  $('btnPw').addEventListener('click', function(){
+    var v = $('pw').value;
+    if (v.length < 4) { say('msg2', 'รหัสสั้นเกินไป อย่างน้อย 4 ตัว', 'err'); return; }
+    var btn = this;
+    btn.disabled = true;
+    say('msg2', 'กำลังบันทึก...', '');
+    sha256hex(v).then(function(hash){
+      return appDoc.set({ teacherPwHash: hash }, { merge: true });
+    }).then(function(){
+      $('pw').value = '';
+      say('msg2', 'ตั้งรหัสผ่านครูเรียบร้อยแล้ว', 'ok');
+      btn.disabled = false;
+    }).catch(function(e){
+      say('msg2', 'บันทึกไม่สำเร็จ: ' + (e.message || e), 'err');
+      btn.disabled = false;
+    });
+  });
+
+  $('btnLoad').addEventListener('click', function(){
+    $('list').innerHTML = '<p class="hint">กำลังโหลด...</p>';
+    colStu.orderBy('no').get().then(function(snap){
+      $('list').innerHTML = renderTable(snap.docs.map(function(d){ return d.data(); }), true);
+    }).catch(function(e){
+      $('list').innerHTML = '<p class="hint">โหลดไม่สำเร็จ: ' + esc(e.message || e) + '</p>';
+    });
+  });
+})();
+</script>
+</body>
+</html>

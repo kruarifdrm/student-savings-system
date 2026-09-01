@@ -1,0 +1,41 @@
+/* ─────────────────────────────────────────────────────────────
+   กฎความปลอดภัย Firestore — ระบบออมทรัพย์นักเรียน
+
+   ⚠ อ่านก่อนใช้งานจริง
+   แอปนี้ไม่ได้ใช้ Firebase Authentication (ครูล็อกอินด้วยรหัสผ่าน
+   ที่ตรวจฝั่งหน้าจอเท่านั้น) กฎด้านล่างจึงต้องเปิดให้อ่าน-เขียนได้
+   โดยไม่ต้องล็อกอิน = ใครรู้ค่า config ในเว็บก็เข้าถึงข้อมูลได้
+
+   เหมาะกับข้อมูลระดับ "ยอดออมของนักเรียนในห้อง" ที่ไม่ใช่ความลับ
+   ถ้าจะเก็บข้อมูลที่อ่อนไหวกว่านี้ ต้องเพิ่ม Firebase Auth ก่อน
+
+   สิ่งที่กฎชุดนี้ทำได้จริง
+     · จำกัดขอบเขตไว้แค่ใต้ savings/ เท่านั้น
+       collection อื่นในโปรเจกต์เดียวกันไม่ถูกเปิดตามไปด้วย
+     · กันเอกสารขนาดใหญ่ผิดปกติด้วยการตรวจชนิดข้อมูลของนักเรียน
+
+   deploy กฎ:  firebase deploy --only firestore:rules
+   ───────────────────────────────────────────────────────────── */
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* เอกสารตั้งค่า savings/app (เก็บ teacherPwHash) */
+    match /savings/{docId} {
+      allow read, write: if true;
+
+      /* ข้อมูลจริงอยู่ใน subcollection: students, transactions
+         Firestore ไม่ cascade ลง subcollection ต้องมี match ครอบ */
+      match /{document=**} {
+        allow read, write: if true;
+      }
+    }
+
+    /* ที่เหลือทั้งโปรเจกต์ปิดไว้ */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

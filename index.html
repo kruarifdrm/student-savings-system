@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#c8521c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ออมทรัพย์">
+  <link rel="apple-touch-icon" id="touchIcon">
+  <link rel="manifest"         id="appManifest">
+  <script>
+  /* ── PWA icon — run synchronously in <head> so iOS reads it immediately ── */
+  (function() {
+    function _rr(c, x, y, w, h, r) {
+      c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+      c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+      c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+    }
+    window._makeIcon = function(size) {
+      var cv = document.createElement('canvas'); cv.width = cv.height = size;
+      var c = cv.getContext('2d'), r = size*0.22;
+      _rr(c,0,0,size,size,r); c.fillStyle='#c8521c'; c.fill();
+      var p=size*0.16, sw=size-p*2, sh=size-p*2, lw=Math.max(2,size*0.055);
+      c.strokeStyle='#ffffff'; c.fillStyle='#ffffff'; c.lineWidth=lw; c.lineCap='round'; c.lineJoin='round';
+      var flapH=sh*0.22, bodyT=p+flapH, bodyH=sh*0.58, bodyR=size*0.07;
+      c.beginPath(); c.moveTo(p+sw*0.12,bodyT); c.lineTo(p+sw*0.12,p+size*0.05);
+      c.quadraticCurveTo(p+sw*0.12,p,p+sw*0.24,p); c.lineTo(p+sw,p);
+      c.quadraticCurveTo(p+sw+lw/2,p,p+sw+lw/2,p+flapH*0.6); c.lineTo(p+sw+lw/2,bodyT); c.stroke();
+      _rr(c,p,bodyT,sw,bodyH,bodyR); c.stroke();
+      var pkX=p+sw*0.52, pkY=bodyT+bodyH*0.18, pkW=sw*0.42, pkH=bodyH*0.58, pkR=pkH/2;
+      _rr(c,pkX,pkY,pkW,pkH,pkR); c.fillStyle='#c8521c'; c.fill(); c.strokeStyle='#ffffff'; c.stroke();
+      c.beginPath(); c.arc(pkX+pkW/2,pkY+pkH/2,pkH*0.22,0,Math.PI*2); c.fillStyle='#ffffff'; c.fill();
+      return cv.toDataURL('image/png');
+    };
+    /* set apple-touch-icon immediately */
+    document.getElementById('touchIcon').href = window._makeIcon(180);
+  })();
+  </script>
+  <title>ระบบออมทรัพย์นักเรียน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:    #c8521c;
+      --primary-2:  #fde8dc;
+      --primary-3:  #f9c4a8;
+      --deposit:    #176b5f;
+      --deposit-bg: #e4f4f1;
+      --withdraw:   #c2412d;
+      --withdraw-bg:#fde8e4;
+      --bg:         #f3f6f9;
+      --surface:    #ffffff;
+      --surface-2:  #eef2f6;
+      --surface-3:  #e2e8f0;
+      --text:       #17212b;
+      --text-2:     #3d4f61;
+      --muted:      #667085;
+      --line:       #d9e0e8;
+      --radius:     10px;
+      --radius-lg:  16px;
+      --radius-pill:999px;
+      --shadow-sm:  0 1px 3px rgb(0 0 0/.08), 0 1px 2px rgb(0 0 0/.05);
+      --shadow-md:  0 4px 12px rgb(0 0 0/.10), 0 2px 4px rgb(0 0 0/.06);
+      --tr: 180ms ease;
+      font-family: 'Sarabun', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+    body { color: var(--text); background: var(--bg); min-height: 100dvh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+
+    /* ══ Role / Login screen ══ */
+    .role-screen { display: none; min-height: 100dvh; flex-direction: column; align-items: center; justify-content: center; padding: 28px 20px; background: linear-gradient(160deg, #fde8dc 0%, #f3f6f9 55%, #eef2f6 100%); }
+    .role-screen.show { display: flex; }
+    .role-logo { width: 72px; height: 72px; background: var(--primary); border-radius: 20px; display: grid; place-items: center; margin-bottom: 16px; box-shadow: 0 8px 24px rgb(200 82 28/.35); }
+    .role-logo svg { width: 38px; height: 38px; color: #fff; }
+    .role-title { font-size: 1.35rem; font-weight: 800; color: var(--text); margin-bottom: 4px; text-align: center; }
+    .role-sub   { font-size: 0.88rem; color: var(--muted); font-weight: 600; margin-bottom: 32px; text-align: center; }
+    .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(100%, 340px); margin-bottom: 20px; }
+    .role-card  { background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius-lg); padding: 22px 12px 18px; text-align: center; cursor: pointer; box-shadow: var(--shadow-sm); transition: border-color var(--tr), box-shadow var(--tr), transform var(--tr); user-select: none; }
+    .role-card:hover  { box-shadow: var(--shadow-md); border-color: var(--primary-3); }
+    .role-card:active { transform: scale(.94); }
+    .role-card.selected { border-color: var(--primary); background: var(--primary-2); }
+    .role-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+    .role-icon.teacher  { background: #fde8dc; }
+    .role-icon.parent   { background: #e4f4f1; }
+    .role-icon svg { width: 28px; height: 28px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .role-icon.teacher svg { stroke: var(--primary); }
+    .role-icon.parent  svg { stroke: var(--deposit); }
+    .role-label { font-size: 1rem; font-weight: 800; margin-bottom: 3px; }
+    .role-desc  { font-size: 0.74rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
+
+    /* password box */
+    .pw-box { width: min(100%, 340px); background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm); display: none; }
+    .pw-box.show { display: block; }
+    .pw-label { font-size: 0.82rem; font-weight: 800; color: var(--text-2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .pw-label svg { width: 14px; height: 14px; stroke: var(--primary); fill: none; stroke-width: 2; }
+    .pw-input-wrap { position: relative; margin-bottom: 10px; }
+    .pw-input { width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid var(--line); border-radius: var(--radius); font-size: 1.1rem; font-weight: 800; letter-spacing: 0.2em; background: var(--surface-2); color: var(--text); font-family: inherit; outline: none; transition: border-color var(--tr); }
+    .pw-input:focus { border-color: var(--primary); background: var(--surface); }
+    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; }
+    .pw-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .pw-err { font-size: 0.8rem; color: var(--withdraw); font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+    .pw-submit { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
+    .pw-submit:hover { opacity: .88; }
+
+    /* parent enter btn */
+    .parent-btn { display: none; width: min(100%, 340px); padding: 14px; background: var(--deposit); color: #fff; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
+    .parent-btn.show { display: block; }
+    .parent-btn:hover { opacity: .88; }
+
+    /* ── Setup screen ── */
+    .setup-screen { display: none; min-height: 100dvh; place-items: center; padding: 24px; background: linear-gradient(135deg, #fde8dc 0%, #f3f6f9 60%, #eef2f6 100%); }
+    .setup-screen.show { display: grid; }
+    .setup-card { width: min(100%, 380px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px 28px; box-shadow: var(--shadow-md); text-align: center; }
+    .setup-icon { width: 72px; height: 72px; background: var(--primary-2); border-radius: var(--radius-lg); display: grid; place-items: center; margin: 0 auto 20px; }
+    .setup-icon svg { width: 38px; height: 38px; color: var(--primary); }
+    .setup-card h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+    .setup-card p  { color: var(--muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 24px; }
+    .setup-btn { width: 100%; padding: 15px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 800; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity var(--tr); }
+    .setup-btn:disabled { opacity: .5; cursor: wait; }
+    .setup-btn svg { width: 18px; height: 18px; }
+    .setup-result { margin-top: 16px; padding: 12px 16px; border-radius: var(--radius); font-size: 0.88rem; font-weight: 700; display: none; }
+    .setup-result.ok  { background: var(--deposit-bg);  color: var(--deposit);  display: block; }
+    .setup-result.err { background: var(--withdraw-bg); color: var(--withdraw); display: block; }
+
+    /* ── App ── */
+    .app { display: none; flex-direction: column; min-height: 100dvh; }
+    .app.show { display: flex; }
+
+    /* ── Topbar ── */
+    .topbar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; min-height: 60px; padding: 0 18px; background: color-mix(in srgb, var(--surface) 92%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .brand { font-weight: 800; font-size: 1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    .brand svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .ss-link { font-size: 0.78rem; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 4px; text-decoration: none; padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--line); transition: background var(--tr), color var(--tr); }
+    .ss-link:hover { background: var(--surface-2); color: var(--text); }
+    .ss-link svg { width: 14px; height: 14px; }
+    .role-badge { font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-pill); }
+    .role-badge.teacher { background: var(--primary-2); color: var(--primary); }
+    .role-badge.parent  { background: var(--deposit-bg); color: var(--deposit); }
+    .logout-btn { background: none; border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px; cursor: pointer; color: var(--muted); display: flex; align-items: center; transition: background var(--tr); }
+    .logout-btn:hover { background: var(--surface-2); color: var(--text); }
+    .logout-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -4px 16px rgb(0 0 0/.08); }
+    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 4px 6px; color: var(--muted); font-size: 0.7rem; font-weight: 700; min-height: 56px; text-decoration: none; transition: color var(--tr); cursor: pointer; }
+    .bottom-nav a.active { color: var(--primary); }
+    .bottom-nav svg { width: 22px; height: 22px; stroke: currentColor; fill: none; }
+    .bottom-nav a.hidden-tab { display: none; }
+
+    /* ── Shell ── */
+    .shell { width: min(1180px, 100%); margin: 0 auto; padding: 16px; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 8px); flex: 1; }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Summary card ── */
+    .summary-card { background: var(--primary); color: #fff; border-radius: var(--radius-lg); padding: 20px 18px; margin-bottom: 14px; box-shadow: var(--shadow-md); }
+    .summary-card .lbl { font-size: 0.82rem; opacity: .8; margin-bottom: 4px; font-weight: 700; }
+    .summary-card .amt { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1; }
+    .summary-card .sub { font-size: 0.82rem; opacity: .72; margin-top: 4px; font-weight: 600; }
+
+    .section-title { color: var(--primary); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; padding-left: 2px; }
+
+    /* ── Dashboard list ── */
+    .dash-list { display: grid; gap: 8px; }
+    .dash-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 13px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm); transition: box-shadow var(--tr); cursor: pointer; }
+    .dash-row:hover { box-shadow: var(--shadow-md); }
+    .d-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--primary-2); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; overflow: hidden; }
+    .d-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .d-info { flex: 1; min-width: 0; }
+    .d-name { font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .d-no   { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    .d-bal  { font-size: 0.95rem; font-weight: 800; color: var(--deposit); white-space: nowrap; }
+
+    /* ── Student grid ── */
+    .student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+    .student-card { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 14px 6px 12px; text-align: center; cursor: pointer; box-shadow: var(--shadow-sm); transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr), background var(--tr); user-select: none; }
+    .student-card:hover  { box-shadow: var(--shadow-md); }
+    .student-card:active { transform: scale(.92); }
+    .student-card.pe-paid   { border-color: var(--deposit); background: var(--deposit-bg); }
+    .student-card.pe-unpaid { border-color: var(--line); }
+    .c-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--primary-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 9px; transition: background var(--tr); overflow: hidden; }
+    .c-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .student-card.pe-paid .c-icon { background: var(--deposit); }
+    .c-icon svg { width: 30px; height: 30px; color: var(--primary); fill: none; stroke: currentColor; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round; }
+    .student-card.pe-paid .c-icon svg { color: #fff; }
+    .c-no   { font-size: 0.7rem; font-weight: 800; color: var(--muted); margin-bottom: 2px; }
+    .c-name { font-size: 0.78rem; font-weight: 700; line-height: 1.3; word-break: break-word; color: var(--text); }
+    .c-bal  { font-size: 0.72rem; font-weight: 700; color: var(--deposit); margin-top: 4px; }
+    .c-pe-status { font-size: 0.7rem; font-weight: 800; margin-top: 5px; }
+    .c-pe-status.paid    { color: var(--deposit); }
+    .c-pe-status.partial { color: var(--primary); }
+    .c-pe-status.unpaid  { color: var(--muted); }
+    .student-card.pe-partial { border-color: var(--primary); background: var(--primary-2); }
+    .student-card.pe-partial .c-icon { background: var(--primary); }
+    .student-card.pe-partial .c-icon svg { color: #fff; }
+
+    /* ── History grid header ── */
+    .hist-grid-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .print-all-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); font-size: 0.82rem; font-weight: 700; color: var(--text-2); cursor: pointer; font-family: inherit; transition: background var(--tr), border-color var(--tr); }
+    .print-all-btn:hover { background: var(--primary-2); border-color: var(--primary); color: var(--primary); }
+    .print-all-btn svg { width: 15px; height: 15px; }
+
+    /* ── History detail ── */
+    .detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .back-btn { width: 38px; height: 38px; border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background var(--tr); color: var(--text-2); }
+    .back-btn:hover { background: var(--surface-2); }
+    .back-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+    .detail-info { flex: 1; min-width: 0; }
+    .detail-name { font-size: 1rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail-bal  { font-size: 0.82rem; color: var(--deposit); font-weight: 700; margin-top: 2px; }
+    .print-one-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--primary); border: none; border-radius: var(--radius); font-size: 0.82rem; font-weight: 700; color: #fff; cursor: pointer; font-family: inherit; flex-shrink: 0; transition: opacity var(--tr); }
+    .print-one-btn svg { width: 15px; height: 15px; }
+
+    /* ── Transaction list ── */
+    .tx-list { display: grid; gap: 8px; }
+    .tx-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-sm); transition: border-color var(--tr); }
+    .tx-row.deleting { border-color: var(--withdraw); background: var(--withdraw-bg); }
+    .tx-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tx-dot.dep { background: var(--deposit); }
+    .tx-dot.wd  { background: var(--withdraw); }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-type { font-size: 0.78rem; font-weight: 800; }
+    .tx-type.dep { color: var(--deposit); }
+    .tx-type.wd  { color: var(--withdraw); }
+    .tx-date { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .tx-right { text-align: right; flex-shrink: 0; }
+    .tx-amt  { font-size: 0.92rem; font-weight: 800; }
+    .tx-amt.dep { color: var(--deposit); }
+    .tx-amt.wd  { color: var(--withdraw); }
+    .tx-bal { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .tx-del { background: none; border: none; padding: 6px; cursor: pointer; color: var(--muted); border-radius: var(--radius); flex-shrink: 0; transition: color var(--tr), background var(--tr); display: flex; align-items: center; }
+    .tx-del:hover { color: var(--withdraw); background: var(--withdraw-bg); }
+    .tx-del svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ── Confirm delete sheet ── */
+    .confirm-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom,0px)); width: 100%; max-width: 420px; animation: slideUp .2s ease; box-shadow: 0 -8px 32px rgb(0 0 0/.12); }
+    .confirm-title { font-size: 1rem; font-weight: 800; color: var(--withdraw); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .confirm-title svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .confirm-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .confirm-desc strong { color: var(--text); }
+    .confirm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .confirm-cancel { padding: 13px; border: 1.5px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); font-size: 0.95rem; font-weight: 700; cursor: pointer; color: var(--muted); font-family: inherit; }
+    .confirm-ok { padding: 13px; border: none; border-radius: var(--radius-lg); background: var(--withdraw); font-size: 0.95rem; font-weight: 800; cursor: pointer; color: #fff; font-family: inherit; }
+    .filter-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom,0px)); width: 100%; max-width: 420px; animation: slideUp .2s ease; box-shadow: 0 -8px 32px rgb(0 0 0/.12); }
+    .filter-sheet-title { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .filter-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .filter-chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-chip { padding: 7px 18px; border-radius: 99px; border: 1.5px solid var(--line); background: var(--surface); font-size: 0.87rem; font-weight: 700; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all var(--tr); }
+    .filter-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .filter-print-btn { width: 100%; margin-top: 20px; padding: 14px; border: none; border-radius: var(--radius-lg); background: var(--primary); font-size: 0.95rem; font-weight: 800; cursor: pointer; color: #fff; font-family: inherit; }
+
+    /* ── Numpad overlay ── */
+    .overlay { position: fixed; inset: 0; background: rgb(0 0 0/.45); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .overlay.open { display: flex; }
+    .numpad-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); width: 100%; max-width: 420px; animation: slideUp .22s ease; box-shadow: 0 -8px 32px rgb(0 0 0/.12); }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .np-head { text-align: center; margin-bottom: 14px; }
+    .type-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 800; margin-bottom: 9px; }
+    .type-pill.deposit  { background: var(--deposit-bg);  color: var(--deposit); }
+    .type-pill.withdraw { background: var(--withdraw-bg); color: var(--withdraw); }
+    .tx-type.pe-pay { color: #1a73e8; }
+    .tx-dot.pe-pay  { background: #1a73e8; }
+    .np-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .np-bal  { font-size: 0.82rem; color: var(--muted); margin-top: 3px; font-weight: 600; }
+    .amount-display { background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 13px 20px; text-align: center; font-size: 1.9rem; font-weight: 800; color: var(--text); margin-bottom: 14px; min-height: 60px; display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px; transition: border-color var(--tr); }
+    .amount-display.empty   { color: var(--muted); font-size: 1rem; font-weight: 600; }
+    .amount-display.has-val { border-color: var(--primary); }
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .num-btn { padding: 16px; border: none; border-radius: var(--radius-lg); font-size: 1.25rem; font-weight: 800; cursor: pointer; background: var(--surface-2); color: var(--text); transition: background var(--tr), transform var(--tr); font-family: inherit; }
+    .num-btn:active { transform: scale(.9); background: var(--surface-3); }
+    .num-btn.del { font-size: 1.1rem; color: var(--withdraw); }
+    .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-cancel { padding: 14px; border: 1.5px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); font-size: 1rem; font-weight: 700; cursor: pointer; color: var(--muted); font-family: inherit; transition: background var(--tr); }
+    .btn-cancel:hover { background: var(--surface-2); }
+    .btn-ok { padding: 14px; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 800; cursor: pointer; color: #fff; font-family: inherit; transition: opacity var(--tr), transform var(--tr); }
+    .btn-ok.deposit  { background: var(--deposit); }
+    .btn-ok.withdraw { background: var(--withdraw); }
+    .btn-ok:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-ok:not(:disabled):active { transform: scale(.97); }
+    .tx-student { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 1px; }
+
+    /* ── Toast ── */
+    .toast-wrap { position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px); left: 16px; right: 16px; z-index: 300; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--text); color: var(--surface); border-radius: var(--radius-lg); font-weight: 700; font-size: 0.92rem; box-shadow: var(--shadow-md); pointer-events: auto; animation: toastIn 220ms ease both, toastOut 220ms ease 3.6s both; }
+    .toast svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; }
+    .toast.ok  { background: var(--deposit); }
+    .toast.err { background: var(--withdraw); }
+    @keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(6px); } }
+
+
+    /* ── Spinner ── */
+    .spinner-wrap { position: fixed; inset: 0; background: rgb(255 255 255/.6); z-index: 400; display: none; align-items: center; justify-content: center; }
+    .spinner-wrap.show { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--surface-3); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 52px 20px; color: var(--muted); line-height: 1.7; font-weight: 600; }
+
+    /* ══ Print ══ */
+    #print-all-area, #print-one-area, #print-dash-area, #print-hist-area { display: none; }
+
+    @media print {
+      body > * { display: none !important; }
+      #print-all-area, #print-one-area, #print-dash-area, #print-hist-area { display: none !important; }
+      body.printing-all  #print-all-area  { display: block !important; }
+      body.printing-one  #print-one-area  { display: block !important; }
+      body.printing-dash #print-dash-area { display: block !important; }
+      body.printing-hist #print-hist-area { display: block !important; }
+
+      .p-page { padding: 0; font-family: 'Sarabun', sans-serif; color: #000; }
+      .p-header { border-bottom: 2px solid #c8521c; padding-bottom: 10px; margin-bottom: 16px; }
+      .p-header h1 { font-size: 16pt; font-weight: 800; color: #c8521c; }
+      .p-header p  { font-size: 10pt; color: #667085; margin-top: 2px; }
+      .p-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+      .p-table th { background: #fde8dc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 7px 10px; text-align: left; border-bottom: 1.5px solid #c8521c; font-weight: 800; color: #17212b; }
+      .p-table th.r { text-align: right; }
+      .p-table td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+      .p-table td.r { text-align: right; font-weight: 700; }
+      .p-table td.green { color: #176b5f; font-weight: 800; }
+      .p-table td.red   { color: #c2412d; font-weight: 800; }
+      .p-table tfoot td { background: #f3f6f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; border-top: 2px solid #c8521c; }
+      .p-num { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: #fde8dc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; align-items: center; justify-content: center; font-weight: 800; font-size: 9pt; color: #c8521c; }
+      .p-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 8.5pt; font-weight: 800; }
+      .p-badge.dep { background: #e4f4f1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #176b5f; }
+      .p-badge.wd  { background: #fde8e4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #c2412d; }
+    }
+    /* ── Capturing mode (for html2canvas) ── */
+    body.capturing #print-hist-area,
+    body.capturing #print-dash-area,
+    body.capturing #print-one-area {
+      display: block !important; position: fixed; left: -9999px; top: 0;
+      width: 794px; background: #fff; padding: 28px; z-index: -1;
+      font-family: 'Sarabun', sans-serif; color: #000;
+    }
+    body.capturing .p-header { border-bottom: 2px solid #c8521c; padding-bottom: 10px; margin-bottom: 16px; }
+    body.capturing .p-header h1 { font-size: 18px; font-weight: 800; color: #c8521c; margin: 0; }
+    body.capturing .p-header p  { font-size: 12px; color: #667085; margin: 4px 0 0; }
+    body.capturing .p-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    body.capturing .p-table th { background: #fde8dc !important; padding: 7px 10px; text-align: left; border-bottom: 1.5px solid #c8521c; font-weight: 800; color: #17212b; }
+    body.capturing .p-table th.r { text-align: right; }
+    body.capturing .p-table td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    body.capturing .p-table td.r { text-align: right; font-weight: 700; }
+    body.capturing .p-table td.green { color: #176b5f; font-weight: 800; }
+    body.capturing .p-table td.red   { color: #c2412d; font-weight: 800; }
+    body.capturing .p-table tfoot td { background: #f3f6f9 !important; font-weight: 800; border-top: 2px solid #c8521c; padding: 7px 10px; }
+    body.capturing .p-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 800; }
+    body.capturing .p-badge.dep { background: #e4f4f1 !important; color: #176b5f; }
+    body.capturing .p-badge.wd  { background: #fde8e4 !important; color: #c2412d; }
+    .filter-share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .filter-share-btn { padding: 12px; border: 1.5px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); font-size: 0.87rem; font-weight: 700; cursor: pointer; font-family: inherit; color: var(--text); transition: all var(--tr); display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .filter-share-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-share-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .filter-month-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface); font-size: 0.9rem; font-weight: 600; color: var(--text); font-family: inherit; cursor: pointer; appearance: auto; }
+  </style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<body>
+
+<!-- ══ Print areas ══ -->
+<div id="print-hist-area" class="p-page">
+  <div class="p-header"><h1 id="ph-title">ประวัติรายการ</h1><p id="ph-subtitle"></p></div>
+  <table class="p-table">
+    <thead><tr><th>วันที่ / เวลา</th><th>ชื่อ</th><th>ประเภท</th><th class="r">จำนวน</th><th class="r">คงเหลือ</th></tr></thead>
+    <tbody id="ph-body"></tbody>
+    <tfoot id="ph-foot"></tfoot>
+  </table>
+</div>
+
+<div id="print-dash-area" class="p-page">
+  <div class="p-header"><h1>ภาพรวมยอดออมทรัพย์นักเรียน</h1><p id="pd-subtitle"></p></div>
+  <table class="p-table">
+    <thead><tr><th style="width:40px"></th><th>ชื่อ-นามสกุล</th><th class="r">ยอดคงเหลือ</th></tr></thead>
+    <tbody id="pd-body"></tbody><tfoot id="pd-foot"></tfoot>
+  </table>
+</div>
+<div id="print-all-area" class="p-page">
+  <div class="p-header"><h1>สรุปยอดออมทรัพย์นักเรียน</h1><p id="pa-subtitle"></p></div>
+  <table class="p-table">
+    <thead><tr><th style="width:40px"></th><th>ชื่อ-นามสกุล</th><th class="r">ยอดคงเหลือ</th></tr></thead>
+    <tbody id="pa-body"></tbody><tfoot id="pa-foot"></tfoot>
+  </table>
+</div>
+<div id="print-one-area" class="p-page">
+  <div class="p-header"><h1 id="po-name"></h1><p id="po-subtitle"></p></div>
+  <table class="p-table">
+    <thead><tr><th>วันที่</th><th>ประเภท</th><th class="r">จำนวน</th><th class="r">ยอดคงเหลือ</th></tr></thead>
+    <tbody id="po-body"></tbody>
+  </table>
+</div>
+
+<!-- ══ Role / Login ══ -->
+<div class="role-screen" id="roleScreen">
+  <div class="role-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2m0 0a2 2 0 0 1 2-2h12v4"/>
+      <path d="M3 6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h17a2 2 0 0 0 2-2v-6"/>
+      <path d="M18 12h2a2 2 0 0 1 0 4h-2a2 2 0 0 1 0-4z" fill="currentColor" stroke="none"/>
+    </svg>
+  </div>
+  <div class="role-title">ระบบออมทรัพย์นักเรียน</div>
+  <div class="role-sub">กรุณาเลือกประเภทผู้ใช้งาน</div>
+
+  <div class="role-cards">
+    <div class="role-card" id="cardTeacher" onclick="selectRole('teacher')">
+      <div class="role-icon teacher">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="role-label">ครู</div>
+      <div class="role-desc">จัดการฝาก-ถอน<br>เข้าถึงทุกฟีเจอร์</div>
+    </div>
+    <div class="role-card" id="cardParent" onclick="selectRole('parent')">
+      <div class="role-icon parent">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="var(--deposit)">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div class="role-label">ผู้ปกครอง</div>
+      <div class="role-desc">ดูยอดเงิน<br>และประวัติ</div>
+    </div>
+  </div>
+
+  <!-- password box (teacher) -->
+  <div class="pw-box" id="pwBox">
+    <div class="pw-label">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      รหัสผ่านครู
+    </div>
+    <div class="pw-input-wrap">
+      <input class="pw-input" id="pwInput" type="password" inputmode="numeric" placeholder="••••••" maxlength="10" autocomplete="off">
+      <button class="pw-toggle" id="pwToggle" type="button">
+        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="pw-err" id="pwErr"></div>
+    <button class="pw-submit" onclick="submitPassword()">เข้าสู่ระบบ</button>
+  </div>
+
+  <!-- parent enter button -->
+  <button class="parent-btn" id="parentBtn" onclick="enterAsParent()">เข้าดูข้อมูล</button>
+</div>
+
+<!-- ══ Setup ══ -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2m0 0a2 2 0 0 1 2-2h12v4"/>
+        <path d="M3 6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h17a2 2 0 0 0 2-2v-6"/>
+        <path d="M18 12h2a2 2 0 0 1 0 4h-2a2 2 0 0 1 0-4z" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <h1>ระบบออมทรัพย์นักเรียน</h1>
+    <p>ยังไม่ได้ตั้งค่า กด "ตั้งค่าระบบ" เพื่อสร้าง Google Sheet อัตโนมัติ</p>
+    <button class="setup-btn" id="setupBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ตั้งค่าระบบ
+    </button>
+    <div class="setup-result" id="setupResult"></div>
+  </div>
+</div>
+
+<!-- ══ App ══ -->
+<div class="app" id="mainApp">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2m0 0a2 2 0 0 1 2-2h12v4"/>
+        <path d="M3 6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h17a2 2 0 0 0 2-2v-6"/>
+        <path d="M18 12h2a2 2 0 0 1 0 4h-2a2 2 0 0 1 0-4z" fill="currentColor" stroke="none"/>
+      </svg>
+      ออมทรัพย์นักเรียน
+    </div>
+    <div class="topbar-right">
+      <span class="role-badge" id="roleBadge"></span>
+      <a class="ss-link" id="ssLink" href="#" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Sheet
+      </a>
+      <button class="logout-btn" onclick="doLogout()" title="ออกจากระบบ">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <!-- Dashboard -->
+    <div class="view active" id="view-dashboard">
+      <div id="dash-main-view">
+        <div class="summary-card">
+          <div class="lbl">ยอดออมรวมทั้งหมด</div>
+          <div class="amt" id="total-amount">฿ 0</div>
+          <div class="sub" id="student-count">นักเรียน 0 คน</div>
+        </div>
+        <div class="hist-grid-head">
+          <p class="section-title" style="margin-bottom:0">ยอดเงินรายบุคคล</p>
+          <button class="print-all-btn" id="printDashBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            ปริ้น
+          </button>
+        </div>
+        <div class="dash-list" id="dashboard-list"><div class="empty-state">กำลังโหลด...</div></div>
+      </div>
+      <div id="dash-detail-view" style="display:none">
+        <div class="detail-head">
+          <button class="back-btn" id="dashBackBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="detail-info">
+            <div class="detail-name" id="dash-detail-name"></div>
+            <div class="detail-bal"  id="dash-detail-bal"></div>
+          </div>
+          <button class="print-one-btn" id="dashPrintOneBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            ปริ้น
+          </button>
+        </div>
+        <div class="tx-list" id="dash-tx-list"><div class="empty-state">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+    <!-- ฝาก -->
+    <div class="view" id="view-deposit">
+      <p class="section-title">เลือกนักเรียนที่ต้องการฝากเงิน</p>
+      <div class="student-grid" id="deposit-grid"><div class="empty-state">กำลังโหลด...</div></div>
+    </div>
+
+    <!-- ถอน -->
+    <div class="view" id="view-withdraw">
+      <p class="section-title">เลือกนักเรียนที่ต้องการถอนเงิน</p>
+      <div class="student-grid" id="withdraw-grid"><div class="empty-state">กำลังโหลด...</div></div>
+    </div>
+
+
+    <!-- ประวัติ -->
+    <div class="view" id="view-history">
+      <div id="hist-grid-view">
+        <div class="hist-grid-head">
+          <p class="section-title" style="margin-bottom:0">ประวัติทั้งหมด</p>
+          <button class="print-all-btn" id="printAllBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            ปริ้นทั้งหมด
+          </button>
+        </div>
+        <div class="tx-list" id="all-tx-list"><div class="empty-state">กำลังโหลด...</div></div>
+      </div>
+      <div id="hist-detail-view" style="display:none">
+        <div class="detail-head">
+          <button class="back-btn" id="backBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="detail-info">
+            <div class="detail-name" id="detail-name"></div>
+            <div class="detail-bal"  id="detail-bal"></div>
+          </div>
+          <button class="print-one-btn" id="printOneBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            ปริ้น
+          </button>
+        </div>
+        <div class="tx-list" id="tx-list"><div class="empty-state">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" id="bottomNav">
+    <a id="tab-dashboard" class="active" onclick="switchTab('dashboard')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>ภาพรวม</span>
+    </a>
+    <a id="tab-deposit" onclick="switchTab('deposit')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>ฝาก</span>
+    </a>
+    <a id="tab-withdraw" onclick="switchTab('withdraw')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>ถอน</span>
+    </a>
+    <a id="tab-history" onclick="switchTab('history')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>ประวัติ</span>
+    </a>
+  </nav>
+
+</div>
+
+<!-- ── Numpad overlay ── -->
+<div class="overlay" id="overlay">
+  <div class="numpad-sheet">
+    <div class="np-head">
+      <div class="type-pill" id="type-pill"></div>
+      <div class="np-name" id="np-name"></div>
+      <div class="np-bal"  id="np-bal"></div>
+    </div>
+    <div class="amount-display empty" id="amount-display">กรอกจำนวนเงิน</div>
+    <div class="numpad-grid">
+      <button class="num-btn" data-v="7">7</button><button class="num-btn" data-v="8">8</button><button class="num-btn" data-v="9">9</button>
+      <button class="num-btn" data-v="4">4</button><button class="num-btn" data-v="5">5</button><button class="num-btn" data-v="6">6</button>
+      <button class="num-btn" data-v="1">1</button><button class="num-btn" data-v="2">2</button><button class="num-btn" data-v="3">3</button>
+      <button class="num-btn del" id="btn-del">⌫</button><button class="num-btn" data-v="0">0</button><button class="num-btn" data-v="00">00</button>
+    </div>
+    <div class="action-row">
+      <button class="btn-cancel" id="btn-cancel">ยกเลิก</button>
+      <button class="btn-ok" id="btn-ok" disabled>ตกลง</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm delete overlay ── -->
+<div class="overlay" id="confirmOverlay">
+  <div class="confirm-sheet">
+    <div class="confirm-title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      ลบรายการนี้?
+    </div>
+    <div class="confirm-desc" id="confirmDesc"></div>
+    <div class="confirm-row">
+      <button class="confirm-cancel" id="confirmCancel">ยกเลิก</button>
+      <button class="confirm-ok"     id="confirmOk">ลบเลย</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="printFilterOverlay">
+  <div class="filter-sheet">
+    <div class="filter-sheet-title">เลือกรายการที่จะปริ้น</div>
+    <div class="filter-label">ประเภทรายการ</div>
+    <div class="filter-chip-group" id="filterTypeGroup">
+      <button class="filter-chip active" data-val="all">ทั้งหมด</button>
+      <button class="filter-chip" data-val="ฝาก">ฝาก</button>
+      <button class="filter-chip" data-val="ถอน">ถอน</button>
+    </div>
+    <div class="filter-label">เดือน</div>
+    <select id="filterMonthSelect" class="filter-month-select">
+      <option value="all">ทั้งหมด</option>
+    </select>
+    <button class="filter-print-btn" id="filterPrintOk">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      ปริ้น
+    </button>
+    <div class="filter-label">แบ่งปัน / บันทึกไฟล์</div>
+    <div class="filter-share-row">
+      <button class="filter-share-btn" id="filterShareJpeg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        ส่งเป็น JPEG
+      </button>
+      <button class="filter-share-btn" id="filterSharePdf">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        ส่งเป็น PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="shareOverlay">
+  <div class="filter-sheet">
+    <div class="filter-sheet-title" id="shareOverlayTitle">แบ่งปัน</div>
+    <button class="filter-print-btn" id="sharePrintOk">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      ปริ้น
+    </button>
+    <div class="filter-label">แบ่งปัน / บันทึกไฟล์</div>
+    <div class="filter-share-row">
+      <button class="filter-share-btn" id="shareJpegOk">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        ส่งเป็น JPEG
+      </button>
+      <button class="filter-share-btn" id="sharePdfOk">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        ส่งเป็น PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap"  id="toastWrap"></div>
+<div class="spinner-wrap" id="spinner"><div class="spinner"></div></div>
+
+<script>
+  /* ── PWA manifest (icon generated in <head> already) ── */
+  (function() {
+    var icon192 = window._makeIcon(192);
+    var icon512 = window._makeIcon(512);
+
+    /* manifest with icons */
+    var manifest = {
+      name: 'ระบบออมทรัพย์นักเรียน',
+      short_name: 'ออมทรัพย์',
+      display: 'standalone',
+      background_color: '#f3f6f9',
+      theme_color: '#c8521c',
+      orientation: 'portrait',
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    document.getElementById('appManifest').href = URL.createObjectURL(blob);
+  })();
+</script>
+
+<template id="icon-person">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+</template>
+
+<!-- ══ Firebase SDK ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<!-- ตั้งค่าโปรเจกต์ Firebase ของโรงเรียนคุณเองที่ไฟล์นี้ (ดู README) -->
+<script src="firebase-config.js"></script>
+<script>
+/* ══ Firestore data layer — google.script.run compatible shim ══
+   โครงสร้าง: savings/app (config) + subcollections: students, transactions, pe, peTx */
+(function() {
+  if (!window.FIREBASE_CONFIG || /YOUR_/.test(window.FIREBASE_CONFIG.apiKey || 'YOUR_')) {
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.innerHTML = '<div style="font-family:sans-serif;padding:40px;line-height:1.9;color:#333">' +
+        '<h2>ยังไม่ได้ตั้งค่า Firebase</h2>' +
+        '<p>เปิดไฟล์ <code>firebase-config.js</code> แล้วใส่ค่าของโปรเจกต์ Firebase ของคุณ<br>' +
+        'วิธีทำอ่านได้ใน <code>README.md</code></p></div>';
+    });
+    throw new Error('firebase-config.js ยังไม่ได้ตั้งค่า');
+  }
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  var db      = firebase.firestore();
+  var appDoc  = db.collection('savings').doc('app');
+  var colStu  = appDoc.collection('students');
+  var colTx   = appDoc.collection('transactions');
+  var colPE   = appDoc.collection('pe');
+  var colPETx = appDoc.collection('peTx');
+
+  /* รหัสครูเริ่มต้น ใช้เฉพาะตอนที่ยังไม่เคยตั้งรหัสไว้ใน Firestore
+     เปลี่ยนได้ที่ firebase-config.js (DEFAULT_TEACHER_PW) หรือตั้งรหัสจริงผ่าน setup.html */
+  var DEFAULT_TEACHER_PW = String(window.DEFAULT_TEACHER_PW || '123456');
+
+  function nowParts() {
+    var d = new Date();
+    return {
+      ts:   d.getTime(),
+      date: d.toLocaleDateString('en-GB', { timeZone: 'Asia/Bangkok' }),                     // dd/mm/yyyy
+      time: d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) // HH:mm
+    };
+  }
+
+  function sha256hex(str) {
+    var buf = new TextEncoder().encode(String(str));
+    return crypto.subtle.digest('SHA-256', buf).then(function(h) {
+      return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    });
+  }
+
+  var _stuCache = null;   // [{no,name,balance,photo}]
+  function fetchStudents(force) {
+    if (_stuCache && !force) return Promise.resolve(_stuCache);
+    return colStu.orderBy('no').get().then(function(snap) {
+      _stuCache = snap.docs.map(function(d){ return d.data(); });
+      return _stuCache;
+    });
+  }
+
+  function fetchStudent(no) {
+    return colStu.doc(String(no)).get().then(function(d) {
+      if (!d.exists) throw new Error('ไม่พบข้อมูลนักเรียน');
+      return d.data();
+    });
+  }
+
+  function mapTxDoc(d) {
+    var x = d.data();
+    return { _id: d.id, date: x.date, time: x.time, studentNo: Number(x.studentNo),
+             name: x.name, type: x.type, amount: Number(x.amount), balance: Number(x.balance) };
+  }
+
+  var api = {
+
+    checkSetup: function() {
+      return appDoc.get().then(function(d) {
+        var url = (d.exists && d.data().backupSheetUrl) || '#';
+        return { ready: true, url: url };
+      }).catch(function(){ return { ready: true, url: '#' }; });
+    },
+
+    initSpreadsheet: function() {
+      return Promise.resolve('ระบบ Firebase พร้อมใช้งานแล้ว');
+    },
+
+    verifyTeacherPassword: function(pw) {
+      return appDoc.get().then(function(d) {
+        var storedHash = d.exists ? d.data().teacherPwHash : null;
+        return sha256hex(pw).then(function(inputHash) {
+          if (storedHash) return { ok: inputHash === storedHash, token: 'fb' };
+          return sha256hex(DEFAULT_TEACHER_PW).then(function(defHash) {
+            return { ok: inputHash === defHash, token: 'fb' };
+          });
+        });
+      }).then(function(r){ return r.ok ? r : { ok: false }; });
+    },
+
+    getStudents: function() {
+      return fetchStudents(true).then(function(list) {
+        return list.map(function(s){ return { no: s.no, name: s.name, balance: Number(s.balance)||0 }; });
+      });
+    },
+
+    getStudentPhotos: function() {
+      return fetchStudents(false).then(function(list) {
+        var m = {};
+        list.forEach(function(s){ if (s.photo) m[s.no] = s.photo; });
+        return m;
+      });
+    },
+
+    saveTransaction: function(studentNo, type, amount) {
+      amount = Number(amount);
+      if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
+      if (type !== 'ฝาก' && type !== 'ถอน') return Promise.resolve({ success: false, message: 'ประเภทรายการไม่ถูกต้อง' });
+      var stuRef = colStu.doc(String(studentNo));
+      return db.runTransaction(function(t) {
+        return t.get(stuRef).then(function(d) {
+          if (!d.exists) throw new Error('ไม่พบข้อมูลนักเรียน');
+          var s = d.data();
+          var cur = Number(s.balance) || 0;
+          var newBalance = type === 'ฝาก' ? cur + amount : cur - amount;
+          if (type === 'ถอน' && newBalance < 0) {
+            throw { _biz: true, message: 'ยอดไม่เพียงพอ (มีอยู่ ฿' + cur.toLocaleString('th-TH') + ')' };
+          }
+          var p = nowParts();
+          t.update(stuRef, { balance: newBalance });
+          t.set(colTx.doc(), { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo),
+                               name: s.name, type: type, amount: amount, balance: newBalance });
+          return { success: true, studentName: s.name, type: type, amount: amount, newBalance: newBalance };
+        });
+      }).catch(function(e) {
+        if (e && e._biz) return { success: false, message: e.message };
+        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
+    getAllTransactions: function() {
+      return colTx.orderBy('ts', 'desc').get().then(function(snap) {
+        return snap.docs.map(mapTxDoc);
+      });
+    },
+
+    getStudentHistory: function(studentNo) {
+      return colTx.orderBy('ts', 'desc').get().then(function(snap) {
+        return snap.docs.map(mapTxDoc).filter(function(tx){ return tx.studentNo === Number(studentNo); });
+      });
+    },
+
+    deleteTransaction: function(studentNo, date, time, type, amount) {
+      return colTx.where('studentNo', '==', Number(studentNo)).get().then(function(snap) {
+        var docs = snap.docs;
+        var target = null;
+        for (var i = 0; i < docs.length; i++) {
+          var x = docs[i].data();
+          if (String(x.date) === String(date) && String(x.time) === String(time) &&
+              String(x.type) === String(type) && Number(x.amount) === Number(amount)) {
+            target = docs[i]; break;
+          }
+        }
+        if (!target) return { success: false, message: 'ไม่พบรายการที่ต้องการลบ' };
+
+        var txType = String(type);
+        var chain = target.ref.delete();
+
+        // ย้อนยอด PE เมื่อลบรายการชุดพละ
+        if (txType === 'หักค่าพละ' || txType === 'จ่ายค่าชุดพละ') {
+          chain = chain.then(function() {
+            return colPE.doc(String(studentNo)).get().then(function(pd) {
+              if (!pd.exists) return;
+              var pe = pd.data();
+              var fee = Number(pe.fee) || 0;
+              var newPaid = Math.max(0, (Number(pe.paid) || 0) - Number(amount));
+              return pd.ref.update({ paid: newPaid, remaining: fee - newPaid });
+            });
+          });
+        }
+
+        // คำนวณยอดออมใหม่จากรายการที่เหลือ (จ่ายค่าชุดพละ ไม่กระทบยอดออม)
+        return chain.then(function() {
+          return colTx.where('studentNo', '==', Number(studentNo)).get();
+        }).then(function(snap2) {
+          var newBalance = 0;
+          snap2.docs.forEach(function(d2) {
+            var x2 = d2.data(), t2 = String(x2.type);
+            if (t2 === 'ฝาก') newBalance += Number(x2.amount);
+            else if (t2 === 'ถอน' || t2 === 'หักค่าพละ') newBalance -= Number(x2.amount);
+          });
+          return colStu.doc(String(studentNo)).update({ balance: newBalance }).then(function() {
+            return { success: true, newBalance: newBalance, type: txType };
+          });
+        });
+      }).catch(function(e){ return { success: false, message: 'ลบไม่สำเร็จ: ' + (e.message || e) }; });
+    },
+
+    getPEStatus: function() {
+      return colPE.orderBy('no').get().then(function(snap) {
+        return snap.docs.map(function(d) {
+          var x = d.data();
+          return { no: Number(x.no), name: x.name, fee: Number(x.fee)||0, paid: Number(x.paid)||0, remaining: Number(x.remaining)||0 };
+        });
+      });
+    },
+
+    recordPEPayment: function(studentNo, amount) {
+      amount = Number(amount);
+      if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
+      var peRef = colPE.doc(String(studentNo));
+      var stuRef = colStu.doc(String(studentNo));
+      return db.runTransaction(function(t) {
+        return Promise.all([t.get(peRef), t.get(stuRef)]).then(function(res) {
+          var pd = res[0], sd = res[1];
+          if (!pd.exists) throw { _biz: true, message: 'ไม่พบรายชื่อนักเรียน' };
+          var pe = pd.data();
+          var fee = Number(pe.fee) || 0;
+          var oldPaid = Number(pe.paid) || 0;
+          var newPaid = Math.min(fee, oldPaid + amount);
+          var delta = newPaid - oldPaid;
+          var savingsBalance = sd.exists ? (Number(sd.data().balance) || 0) : 0;
+          var p = nowParts();
+          t.update(peRef, { paid: newPaid, remaining: fee - newPaid });
+          t.set(colPETx.doc(), { ts: p.ts, date: p.date, time: p.time, no: Number(studentNo), name: pe.name, amount: delta, cumulative: newPaid });
+          t.set(colTx.doc(),   { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo), name: pe.name, type: 'จ่ายค่าชุดพละ', amount: delta, balance: savingsBalance });
+          return { success: true, name: pe.name, paid: newPaid, remaining: fee - newPaid, fee: fee };
+        });
+      }).catch(function(e) {
+        if (e && e._biz) return { success: false, message: e.message };
+        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
+    deductPEFromSavings: function(studentNo, amount) {
+      amount = Number(amount);
+      if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
+      var peRef = colPE.doc(String(studentNo));
+      var stuRef = colStu.doc(String(studentNo));
+      return db.runTransaction(function(t) {
+        return Promise.all([t.get(stuRef), t.get(peRef)]).then(function(res) {
+          var sd = res[0], pd = res[1];
+          if (!sd.exists) throw { _biz: true, message: 'ไม่พบนักเรียน' };
+          if (!pd.exists) throw { _biz: true, message: 'ไม่พบข้อมูลค่าชุดพละ' };
+          var s = sd.data(), pe = pd.data();
+          var currentBalance = Number(s.balance) || 0;
+          var fee = Number(pe.fee) || 0, oldPaid = Number(pe.paid) || 0;
+          var peRemaining = Number(pe.remaining) || 0;
+          if (currentBalance <= 0) throw { _biz: true, message: 'ยอดเงินออมไม่เพียงพอ' };
+          if (peRemaining <= 0)    throw { _biz: true, message: 'จ่ายค่าชุดพละครบแล้ว' };
+
+          var deduct     = Math.min(amount, peRemaining, currentBalance);
+          var newBalance = currentBalance - deduct;
+          var newPaid    = oldPaid + deduct;
+          var p = nowParts();
+
+          t.update(stuRef, { balance: newBalance });
+          t.set(colTx.doc(),   { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo), name: s.name, type: 'หักค่าพละ', amount: deduct, balance: newBalance });
+          t.update(peRef, { paid: newPaid, remaining: fee - newPaid });
+          t.set(colPETx.doc(), { ts: p.ts, date: p.date, time: p.time, no: Number(studentNo), name: s.name, amount: deduct, cumulative: newPaid });
+
+          return { success: true, name: s.name, deducted: deduct, newSavings: newBalance, pePaid: newPaid, peRemaining: fee - newPaid, peFee: fee };
+        });
+      }).catch(function(e) {
+        if (e && e._biz) return { success: false, message: e.message };
+        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
+      });
+    }
+  };
+
+  /* google.script.run compatible facade */
+  function Runner() { this._ok = function(){}; this._err = function(e){ console.error(e); }; }
+  Runner.prototype.withSuccessHandler = function(f){ this._ok = f || this._ok; return this; };
+  Runner.prototype.withFailureHandler = function(f){ this._err = f || this._err; return this; };
+  Object.keys(api).forEach(function(name) {
+    Runner.prototype[name] = function() {
+      var args = arguments, self = this;
+      Promise.resolve()
+        .then(function(){ return api[name].apply(null, args); })
+        .then(function(r){ self._ok(r); })
+        .catch(function(e){ self._err(e); });
+    };
+  });
+  var root = {
+    withSuccessHandler: function(f){ return new Runner().withSuccessHandler(f); },
+    withFailureHandler: function(f){ return new Runner().withFailureHandler(f); }
+  };
+  Object.keys(api).forEach(function(name) {
+    root[name] = function(){ var r = new Runner(); return r[name].apply(r, arguments); };
+  });
+  window.google = { script: { run: root } };
+})();
+</script>
+
+<script>
+  var students   = [];
+  var selStudent = null;
+  var selType    = '';
+  var inputVal   = '';
+  var histStu    = null;
+  var userRole   = '';   // 'teacher' | 'parent'
+  var TABS_ALL    = ['dashboard','deposit','withdraw','history'];
+  var TABS_PARENT = ['dashboard','history'];
+
+  /* ══ Role screen ══ */
+  function selectRole(role) {
+    document.getElementById('cardTeacher').classList.toggle('selected', role==='teacher');
+    document.getElementById('cardParent').classList.toggle('selected',  role==='parent');
+    document.getElementById('pwBox').classList.toggle('show',    role==='teacher');
+    document.getElementById('parentBtn').classList.toggle('show', role==='parent');
+    if (role==='teacher') { document.getElementById('pwInput').focus(); document.getElementById('pwErr').textContent=''; }
+  }
+
+  function submitPassword() {
+    var v = document.getElementById('pwInput').value;
+    if (!v) return;
+    var btn = document.querySelector('.pw-submit');
+    btn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        if (res && res.ok) {
+          enterApp('teacher');
+        } else {
+          document.getElementById('pwErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
+          document.getElementById('pwInput').value = '';
+          document.getElementById('pwInput').focus();
+        }
+      })
+      .withFailureHandler(function() {
+        btn.disabled = false;
+        document.getElementById('pwErr').textContent = 'เชื่อมต่อไม่ได้ ลองใหม่';
+      })
+      .verifyTeacherPassword(v);
+  }
+
+  function enterAsParent() { enterApp('parent'); }
+
+  document.getElementById('pwInput').addEventListener('keydown', function(e){ if(e.key==='Enter') submitPassword(); });
+
+  /* show/hide password */
+  document.getElementById('pwToggle').addEventListener('click', function(){
+    var inp = document.getElementById('pwInput');
+    var isText = inp.type === 'text';
+    inp.type = isText ? 'password' : 'text';
+    document.getElementById('eyeIcon').innerHTML = isText
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  });
+
+  /* ══ Enter app ══ */
+  function enterApp(role) {
+    userRole = role;
+    sessionStorage.setItem('role', role);
+    document.getElementById('roleScreen').classList.remove('show');
+
+    var badge = document.getElementById('roleBadge');
+    badge.textContent  = role==='teacher' ? 'ครู' : 'ผู้ปกครอง';
+    badge.className    = 'role-badge ' + role;
+
+    /* ซ่อนแท็บ ฝาก/ถอน สำหรับ parent */
+    document.getElementById('tab-deposit').classList.toggle('hidden-tab',  role==='parent');
+    document.getElementById('tab-withdraw').classList.toggle('hidden-tab', role==='parent');
+
+    /* ซ่อนปุ่ม toggle PE สำหรับ parent (ผ่าน CSS class บน body) */
+    document.body.classList.toggle('role-parent', role==='parent');
+
+    /* hide Sheet link for parent */
+    document.getElementById('ssLink').style.display = role==='teacher' ? '' : 'none';
+
+    google.script.run
+      .withSuccessHandler(function(info) {
+        if (info.ready) {
+          var ssl = document.getElementById('ssLink');
+          ssl.href = info.url;
+          if (!info.url || info.url === '#') ssl.style.display = 'none';
+          document.getElementById('mainApp').classList.add('show');
+          loadStudents();
+        } else {
+          if (role==='teacher') {
+            document.getElementById('setupScreen').classList.add('show');
+          } else {
+            document.getElementById('mainApp').classList.add('show');
+            renderAll();
+          }
+        }
+      })
+      .withFailureHandler(function(err) {
+        showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่', true);
+        document.getElementById('loginScreen').classList.add('show');
+        document.getElementById('mainApp').classList.remove('show');
+      })
+      .checkSetup();
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('role');
+    userRole = '';
+    students = [];
+    document.getElementById('mainApp').classList.remove('show');
+    document.getElementById('setupScreen').classList.remove('show');
+    /* reset role screen */
+    document.getElementById('cardTeacher').classList.remove('selected');
+    document.getElementById('cardParent').classList.remove('selected');
+    document.getElementById('pwBox').classList.remove('show');
+    document.getElementById('parentBtn').classList.remove('show');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwErr').textContent = '';
+    document.getElementById('roleScreen').classList.add('show');
+    switchTab('dashboard');
+  }
+
+  /* ══ Boot ══ */
+  var savedRole = sessionStorage.getItem('role');
+  if (savedRole) {
+    enterApp(savedRole);
+  } else {
+    document.getElementById('roleScreen').classList.add('show');
+  }
+
+  /* ── Setup ── */
+  document.getElementById('setupBtn').addEventListener('click', function() {
+    var btn = this, res = document.getElementById('setupResult');
+    btn.disabled = true; btn.textContent = 'กำลังสร้าง...'; res.className = 'setup-result';
+    google.script.run
+      .withSuccessHandler(function(msg) { res.textContent = msg; res.className = 'setup-result ok'; setTimeout(function(){ window.location.reload(); }, 2000); })
+      .withFailureHandler(function(e) { res.textContent = 'เกิดข้อผิดพลาด: '+(e.message||e); res.className='setup-result err'; btn.disabled=false; btn.textContent='ลองอีกครั้ง'; })
+      .initSpreadsheet();
+  });
+
+  /* ── Load students ── */
+  var photoMap = {};
+  var photosLoaded = false;
+
+  function loadStudents() {
+    google.script.run
+      .withSuccessHandler(function(d){ students = d||[]; renderAll(); loadPhotos(); })
+      .withFailureHandler(function(){ toast('โหลดข้อมูลไม่สำเร็จ','err'); })
+      .getStudents();
+  }
+
+  function loadPhotos() {
+    if (photosLoaded) return;
+    google.script.run
+      .withSuccessHandler(function(m){
+        photoMap = m || {};
+        photosLoaded = true;
+        renderAll();
+      })
+      .withFailureHandler(function(){ /* ไม่มีรูปก็ใช้ icon เดิม */ })
+      .getStudentPhotos();
+  }
+
+  function renderAll() {
+    renderDashboard();
+    if (userRole==='teacher') {
+      renderGrid('deposit-grid',  'deposit');
+      renderGrid('withdraw-grid', 'withdraw');
+    }
+  }
+
+
+  /* ── Dashboard ── */
+  function renderDashboard() {
+    var total = students.reduce(function(s,x){ return s+x.balance; }, 0);
+    document.getElementById('total-amount').textContent  = '฿ ' + fmt(total);
+    document.getElementById('student-count').textContent = 'นักเรียน ' + students.length + ' คน';
+    var el = document.getElementById('dashboard-list');
+    if (!students.length) { el.innerHTML = '<div class="empty-state">ยังไม่มีรายชื่อนักเรียน</div>'; return; }
+    el.innerHTML = students.map(function(s){
+      var dAvatar = photoImg(s.no) || s.no;
+      return '<div class="dash-row" data-no="'+s.no+'"><div class="d-avatar">'+dAvatar+'</div><div class="d-info"><div class="d-name">'+esc(s.name)+'</div><div class="d-no">เลขที่ '+s.no+'</div></div><div class="d-bal">฿'+fmt(s.balance)+'</div></div>';
+    }).join('');
+    el.querySelectorAll('.dash-row').forEach(function(row) {
+      row.addEventListener('click', function() { openDashStudentHistory(row.dataset.no); });
+    });
+  }
+
+  function openDashStudentHistory(no) {
+    histStu = students.find(function(s){ return String(s.no) === String(no); });
+    if (!histStu) return;
+    detailContext = 'dashboard';
+    document.getElementById('dash-main-view').style.display  = 'none';
+    document.getElementById('dash-detail-view').style.display = '';
+    document.getElementById('dash-detail-name').textContent = histStu.name;
+    document.getElementById('dash-detail-bal').textContent  = 'ยอดปัจจุบัน ฿' + fmt(histStu.balance);
+    var el = document.getElementById('dash-tx-list');
+    el.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+    txListTarget = 'dash-tx-list';
+    google.script.run
+      .withSuccessHandler(renderTxList)
+      .withFailureHandler(function(){ el.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ</div>'; })
+      .getStudentHistory(histStu.no);
+  }
+
+  document.getElementById('dashBackBtn').addEventListener('click', function() {
+    histStu = null;
+    document.getElementById('dash-detail-view').style.display = 'none';
+    document.getElementById('dash-main-view').style.display  = '';
+  });
+
+  /* ── Student grid ── */
+  function personIcon() { var t = document.getElementById('icon-person'); return t ? t.innerHTML : ''; }
+  function photoImg(no) {
+    var u = photoMap[no];
+    return u ? '<img src="'+u+'" loading="lazy" alt="">' : '';
+  }
+  function cardIconHtml(s) {
+    return photoImg(s.no) || personIcon();
+  }
+
+  function renderGrid(id, type) {
+    var el = document.getElementById(id);
+    if (!students.length) { el.innerHTML = '<div class="empty-state">ยังไม่มีรายชื่อนักเรียน</div>'; return; }
+    el.innerHTML = students.map(function(s){
+      return '<div class="student-card" data-no="'+s.no+'" data-type="'+type+'"><div class="c-icon">'+cardIconHtml(s)+'</div><div class="c-no">เลขที่ '+s.no+'</div><div class="c-name">'+esc(s.name)+'</div><div class="c-bal">฿'+fmt(s.balance)+'</div></div>';
+    }).join('');
+    el.querySelectorAll('.student-card').forEach(function(card){
+      card.addEventListener('click', function(){
+        if (card.dataset.type === 'history') openStudentHistory(card.dataset.no);
+        else if (userRole==='teacher') openNumpad(card.dataset.no, card.dataset.type);
+      });
+    });
+  }
+
+  /* ── Tab switch ── */
+  function switchTab(name) {
+    if (userRole==='parent' && (name==='deposit'||name==='withdraw')) name='dashboard';
+    TABS_ALL.forEach(function(t){
+      document.getElementById('tab-'+t).classList.toggle('active', t===name);
+      document.getElementById('view-'+t).classList.toggle('active', t===name);
+    });
+    if (name === 'history') showHistGrid();
+  }
+
+
+  /* ── History ── */
+  function showHistGrid() {
+    histStu = null;
+    document.getElementById('hist-grid-view').style.display   = '';
+    document.getElementById('hist-detail-view').style.display = 'none';
+    var el = document.getElementById('all-tx-list');
+    el.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+    google.script.run
+      .withSuccessHandler(renderAllTxList)
+      .withFailureHandler(function(){ el.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ</div>'; })
+      .getAllTransactions();
+  }
+
+  function renderAllTxList(data) {
+    txCache = data || [];
+    var el = document.getElementById('all-tx-list');
+    if (!txCache.length) { el.innerHTML = '<div class="empty-state">ยังไม่มีรายการ</div>'; return; }
+    var canDel = userRole === 'teacher';
+    el.innerHTML = txCache.map(function(tx, i) {
+      var dep = tx.type === 'ฝาก', isPEPay = tx.type === 'จ่ายค่าชุดพละ';
+      var cls = dep ? 'dep' : isPEPay ? 'pe-pay' : 'wd';
+      var typeLabel = dep ? 'ฝาก' : isPEPay ? 'จ่ายค่าชุดพละ' : tx.type === 'หักค่าพละ' ? 'หักค่าพละ' : 'ถอน';
+      var sign = dep ? '+' : isPEPay ? '' : '−';
+      var delBtn = canDel
+        ? '<button class="tx-del" data-i="'+i+'" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
+        : '';
+      return '<div class="tx-row" data-i="'+i+'">'+
+        '<div class="tx-dot '+cls+'"></div>'+
+        '<div class="tx-info">'+
+          '<div class="tx-student">'+esc(tx.name)+'</div>'+
+          '<div class="tx-type '+cls+'">'+esc(typeLabel)+'</div>'+
+          '<div class="tx-date">'+esc(tx.date)+' '+esc(tx.time)+'</div>'+
+        '</div>'+
+        '<div class="tx-right"><div class="tx-amt '+cls+'">'+sign+'฿'+fmt(tx.amount)+'</div><div class="tx-bal">คงเหลือ ฿'+fmt(tx.balance)+'</div></div>'+
+        delBtn+'</div>';
+    }).join('');
+    if (canDel) {
+      el.querySelectorAll('.tx-del').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          openConfirmDelete(Number(btn.dataset.i));
+        });
+      });
+    }
+  }
+
+  function openStudentHistory(no) {
+    histStu = students.find(function(s){ return String(s.no)===String(no); });
+    if (!histStu) return;
+    detailContext = 'history';
+    txListTarget  = 'tx-list';
+    document.getElementById('hist-grid-view').style.display   = 'none';
+    document.getElementById('hist-detail-view').style.display = '';
+    document.getElementById('detail-name').textContent = histStu.name;
+    document.getElementById('detail-bal').textContent  = 'ยอดปัจจุบัน ฿' + fmt(histStu.balance);
+    var el = document.getElementById('tx-list');
+    el.innerHTML = '<div class="empty-state">กำลังโหลด...</div>';
+    google.script.run
+      .withSuccessHandler(renderTxList)
+      .withFailureHandler(function(){ el.innerHTML = '<div class="empty-state">โหลดไม่สำเร็จ</div>'; })
+      .getStudentHistory(histStu.no);
+  }
+
+  var txCache = [];
+  var txListTarget  = 'tx-list';
+  var detailContext = 'history';
+
+  function renderTxList(data) {
+    txCache = data || [];
+    var el = document.getElementById(txListTarget);
+    if (!txCache.length){ el.innerHTML='<div class="empty-state">ยังไม่มีรายการ</div>'; return; }
+    var canDel = userRole === 'teacher';
+    el.innerHTML = txCache.map(function(tx, i){
+      var dep=tx.type==='ฝาก', isPEPay=tx.type==='จ่ายค่าชุดพละ';
+      var cls=dep?'dep':isPEPay?'pe-pay':'wd';
+      var typeLabel=dep?'ฝาก':isPEPay?'จ่ายค่าชุดพละ':tx.type==='หักค่าพละ'?'หักค่าพละ':'ถอน';
+      var sign=dep?'+':isPEPay?'':'−';
+      var delBtn = canDel
+        ? '<button class="tx-del" data-i="'+i+'" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
+        : '';
+      return '<div class="tx-row" data-i="'+i+'">'+
+        '<div class="tx-dot '+cls+'"></div>'+
+        '<div class="tx-info"><div class="tx-type '+cls+'">'+esc(typeLabel)+'</div><div class="tx-date">'+esc(tx.date)+' '+esc(tx.time)+'</div></div>'+
+        '<div class="tx-right"><div class="tx-amt '+cls+'">'+sign+'฿'+fmt(tx.amount)+'</div><div class="tx-bal">คงเหลือ ฿'+fmt(tx.balance)+'</div></div>'+
+        delBtn+
+        '</div>';
+    }).join('');
+    if (canDel) {
+      el.querySelectorAll('.tx-del').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          openConfirmDelete(Number(btn.dataset.i));
+        });
+      });
+    }
+  }
+
+  /* ── Confirm delete ── */
+  var pendingDelIdx = -1;
+
+  function openConfirmDelete(idx) {
+    var tx = txCache[idx];
+    if (!tx) return;
+    pendingDelIdx = idx;
+    var dep = tx.type === 'ฝาก', isPEPay = tx.type === 'จ่ายค่าชุดพละ', isPEDed = tx.type === 'หักค่าพละ';
+    var label = dep ? '+ ฝาก' : isPEPay ? 'จ่ายค่าชุดพละ' : isPEDed ? '− หักค่าพละ' : '− ถอน';
+    document.getElementById('confirmDesc').innerHTML =
+      '<strong>'+label+' ฿'+fmt(tx.amount)+'</strong><br>'+
+      esc(tx.date)+' '+esc(tx.time)+'<br>คงเหลือหลังรายการ ฿'+fmt(tx.balance);
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+
+  document.getElementById('confirmCancel').addEventListener('click', function(){
+    document.getElementById('confirmOverlay').classList.remove('open');
+    pendingDelIdx = -1;
+  });
+  document.getElementById('confirmOverlay').addEventListener('click', function(e){
+    if (e.target === this) { this.classList.remove('open'); pendingDelIdx = -1; }
+  });
+
+  document.getElementById('confirmOk').addEventListener('click', function(){
+    if (pendingDelIdx < 0) return;
+    var tx = txCache[pendingDelIdx];
+    if (!tx) return;
+    var sNo = histStu ? histStu.no : tx.studentNo;
+    if (!sNo) return;
+    document.getElementById('confirmOverlay').classList.remove('open');
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(r){
+        showSpinner(false);
+        if (r.success) {
+          /* อัปเดต students array */
+          var idx2 = students.findIndex(function(s){ return s.no === sNo; });
+          if (idx2 !== -1) students[idx2].balance = r.newBalance;
+          renderDashboard();
+          if (userRole === 'teacher') {
+            renderGrid('deposit-grid', 'deposit');
+            renderGrid('withdraw-grid', 'withdraw');
+          }
+          /* โหลดประวัติใหม่ตามโหมดที่อยู่ */
+          if (histStu && detailContext === 'dashboard') {
+            histStu.balance = r.newBalance;
+            document.getElementById('dash-detail-bal').textContent = 'ยอดปัจจุบัน ฿'+fmt(r.newBalance);
+            openDashStudentHistory(sNo);
+          } else if (histStu) {
+            histStu.balance = r.newBalance;
+            document.getElementById('detail-bal').textContent = 'ยอดปัจจุบัน ฿'+fmt(r.newBalance);
+            openStudentHistory(sNo);
+          } else {
+            showHistGrid();
+          }
+          toast('ลบรายการเรียบร้อย','ok');
+        } else { toast(r.message || 'ลบไม่สำเร็จ','err'); }
+        pendingDelIdx = -1;
+      })
+      .withFailureHandler(function(){ showSpinner(false); toast('เกิดข้อผิดพลาด','err'); pendingDelIdx = -1; })
+      .deleteTransaction(sNo, tx.date, tx.time, tx.type, tx.amount);
+  });
+
+  document.getElementById('backBtn').addEventListener('click', showHistGrid);
+
+
+  /* ── Print dashboard ── */
+  /* ══ Shared print/share utilities ══ */
+  function shareOrDownload(blob, filename, mimeType) {
+    var file = new File([blob], filename, { type: mimeType });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: filename }).catch(function(){});
+    } else {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    }
+  }
+
+  function captureArea(areaId, format, filename) {
+    document.body.classList.add('capturing');
+    showSpinner(true);
+    setTimeout(function() {
+      var el = document.getElementById(areaId);
+      html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false })
+        .then(function(canvas) {
+          document.body.classList.remove('capturing');
+          showSpinner(false);
+          if (format === 'jpeg') {
+            canvas.toBlob(function(blob){ shareOrDownload(blob, filename+'.jpg', 'image/jpeg'); }, 'image/jpeg', 0.92);
+          } else {
+            canvas.toBlob(function(imgBlob) {
+              var imgUrl = URL.createObjectURL(imgBlob);
+              var img = new Image();
+              img.onload = function() {
+                var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                var pw = pdf.internal.pageSize.getWidth();
+                var ph = (img.height * pw) / img.width;
+                var pageH = pdf.internal.pageSize.getHeight();
+                if (ph <= pageH) {
+                  pdf.addImage(img, 'JPEG', 0, 0, pw, ph);
+                } else {
+                  var y = 0;
+                  while (y < ph) { if (y > 0) pdf.addPage(); pdf.addImage(img,'JPEG',0,-y,pw,ph); y += pageH; }
+                }
+                shareOrDownload(pdf.output('blob'), filename+'.pdf', 'application/pdf');
+                URL.revokeObjectURL(imgUrl);
+              };
+              img.src = imgUrl;
+            }, 'image/jpeg', 0.92);
+          }
+        })
+        .catch(function() {
+          document.body.classList.remove('capturing');
+          showSpinner(false);
+          toast('สร้างไฟล์ไม่สำเร็จ', 'err');
+        });
+    }, 150);
+  }
+
+  /* ── Generic share overlay ── */
+  var _shareCtx = null;
+  document.getElementById('shareOverlay').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+  document.getElementById('sharePrintOk').addEventListener('click', function() {
+    if (!_shareCtx) return;
+    document.getElementById('shareOverlay').classList.remove('open');
+    document.body.classList.add(_shareCtx.printClass); window.print(); document.body.classList.remove(_shareCtx.printClass);
+  });
+  document.getElementById('shareJpegOk').addEventListener('click', function() {
+    if (!_shareCtx) return;
+    document.getElementById('shareOverlay').classList.remove('open');
+    captureArea(_shareCtx.areaId, 'jpeg', _shareCtx.filename);
+  });
+  document.getElementById('sharePdfOk').addEventListener('click', function() {
+    if (!_shareCtx) return;
+    document.getElementById('shareOverlay').classList.remove('open');
+    captureArea(_shareCtx.areaId, 'pdf', _shareCtx.filename);
+  });
+  function openShareOverlay(title, areaId, printClass, filename) {
+    _shareCtx = { areaId: areaId, printClass: printClass, filename: filename };
+    document.getElementById('shareOverlayTitle').textContent = title;
+    document.getElementById('shareOverlay').classList.add('open');
+  }
+
+  /* ── Print dashboard ── */
+  document.getElementById('printDashBtn').addEventListener('click', function() {
+    var now = new Date(), total = 0;
+    document.getElementById('pd-subtitle').textContent = 'ข้อมูล ณ '+now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})+'  •  นักเรียน '+students.length+' คน';
+    document.getElementById('pd-body').innerHTML = students.map(function(s){ total+=s.balance; return '<tr><td><span class="p-num">'+s.no+'</span></td><td>'+esc(s.name)+'</td><td class="r green">฿'+fmt(s.balance)+'</td></tr>'; }).join('');
+    document.getElementById('pd-foot').innerHTML = '<tr><td colspan="2">รวมทั้งหมด ('+students.length+' คน)</td><td class="r green">฿'+fmt(total)+'</td></tr>';
+    openShareOverlay('ภาพรวมยอดออม', 'print-dash-area', 'printing-dash', 'ภาพรวม');
+  });
+
+  /* ── Print history (with filter) ── */
+  (function() {
+    var selType = 'all';
+
+    function setChip(groupId, val) {
+      document.getElementById(groupId).querySelectorAll('.filter-chip').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.val === val);
+      });
+    }
+
+    function populateMonthDropdown() {
+      var sel = document.getElementById('filterMonthSelect');
+      var months = {};
+      txCache.forEach(function(tx) {
+        var parts = String(tx.date).split('/');
+        if (parts.length === 3) {
+          var key = parts[2] + '-' + ('0' + parts[1]).slice(-2);
+          if (!months[key]) {
+            var d = new Date(Number(parts[2]), Number(parts[1]) - 1, 1);
+            months[key] = d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long' });
+          }
+        }
+      });
+      var keys = Object.keys(months).sort().reverse();
+      var opts = '<option value="all">ทั้งหมด</option>';
+      keys.forEach(function(k) { opts += '<option value="' + k + '">' + months[k] + '</option>'; });
+      sel.innerHTML = opts;
+    }
+
+    document.getElementById('filterTypeGroup').addEventListener('click', function(e) {
+      var chip = e.target.closest('.filter-chip'); if (!chip) return;
+      selType = chip.dataset.val; setChip('filterTypeGroup', selType);
+    });
+    document.getElementById('printFilterOverlay').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+    document.getElementById('printAllBtn').addEventListener('click', function() {
+      selType = 'all';
+      setChip('filterTypeGroup', 'all');
+      populateMonthDropdown();
+      document.getElementById('filterMonthSelect').value = 'all';
+      document.getElementById('printFilterOverlay').classList.add('open');
+    });
+
+    /* ── build print-hist-area content ── */
+    function buildHistContent() {
+      var selMonth = document.getElementById('filterMonthSelect').value;
+      var filtered = txCache.filter(function(tx) {
+        if (tx.type === 'จ่ายค่าชุดพละ' || tx.type === 'หักค่าพละ') return false;
+        if (selType !== 'all' && tx.type !== selType) return false;
+        if (selMonth !== 'all') {
+          var parts = String(tx.date).split('/');
+          if (parts.length !== 3) return false;
+          var key = parts[2] + '-' + ('0' + parts[1]).slice(-2);
+          if (key !== selMonth) return false;
+        }
+        return true;
+      });
+      var typeLabel  = selType  === 'all' ? 'ทั้งหมด' : selType;
+      var mSel = document.getElementById('filterMonthSelect');
+      var monthLabel = selMonth === 'all' ? 'ทั้งหมด' : mSel.options[mSel.selectedIndex].text;
+      var now = new Date();
+      document.getElementById('ph-title').textContent = 'ประวัติรายการ — ' + typeLabel;
+      document.getElementById('ph-subtitle').textContent =
+        'เดือน: ' + monthLabel + '  •  ' + filtered.length + ' รายการ  •  ' +
+        now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('ph-body').innerHTML = filtered.length
+        ? filtered.map(function(tx) {
+            var dep = tx.type === 'ฝาก', cls = dep ? 'dep' : 'wd', sign = dep ? '+' : '−';
+            return '<tr>'+
+              '<td>'+esc(tx.date)+' '+esc(tx.time)+'</td>'+
+              '<td>'+esc(tx.name||'')+'</td>'+
+              '<td><span class="p-badge '+cls+'">'+esc(dep?'ฝาก':'ถอน')+'</span></td>'+
+              '<td class="r '+(dep?'green':'red')+'">'+sign+'฿'+fmt(tx.amount)+'</td>'+
+              '<td class="r">฿'+fmt(tx.balance)+'</td></tr>';
+          }).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#667085;padding:16px">ไม่มีรายการที่ตรงกับเงื่อนไข</td></tr>';
+      document.getElementById('ph-foot').innerHTML = '<tr><td colspan="5">รวม ' + filtered.length + ' รายการ</td></tr>';
+    }
+
+    document.getElementById('filterPrintOk').addEventListener('click', function() {
+      document.getElementById('printFilterOverlay').classList.remove('open');
+      buildHistContent();
+      document.body.classList.add('printing-hist'); window.print(); document.body.classList.remove('printing-hist');
+    });
+    document.getElementById('filterShareJpeg').addEventListener('click', function() {
+      document.getElementById('printFilterOverlay').classList.remove('open');
+      buildHistContent();
+      captureArea('print-hist-area', 'jpeg', 'ประวัติ');
+    });
+    document.getElementById('filterSharePdf').addEventListener('click', function() {
+      document.getElementById('printFilterOverlay').classList.remove('open');
+      buildHistContent();
+      captureArea('print-hist-area', 'pdf', 'ประวัติ');
+    });
+  })();
+
+  /* ── Print one (shared by hist-detail and dash-detail) ── */
+  function openPrintOne() {
+    if (!histStu) return;
+    var now = new Date();
+    document.getElementById('po-name').textContent     = histStu.name+'  (เลขที่ '+histStu.no+')';
+    document.getElementById('po-subtitle').textContent = 'ยอดคงเหลือ ฿'+fmt(histStu.balance)+'  •  พิมพ์ ณ '+now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(data){
+        showSpinner(false);
+        document.getElementById('po-body').innerHTML = (data&&data.length)
+          ? data.map(function(tx){ var dep=tx.type==='ฝาก'; return '<tr><td>'+tx.date+' '+tx.time+'</td><td><span class="p-badge '+(dep?'dep':'wd')+'">'+tx.type+'</span></td><td class="r '+(dep?'green':'red')+'">'+(dep?'+':'−')+'฿'+fmt(tx.amount)+'</td><td class="r">฿'+fmt(tx.balance)+'</td></tr>'; }).join('')
+          : '<tr><td colspan="4" style="text-align:center;color:#667085;padding:16px">ยังไม่มีรายการ</td></tr>';
+        openShareOverlay(histStu.name, 'print-one-area', 'printing-one', histStu.name);
+      })
+      .withFailureHandler(function(){ showSpinner(false); toast('โหลดไม่สำเร็จ','err'); })
+      .getStudentHistory(histStu.no);
+  }
+  document.getElementById('printOneBtn').addEventListener('click', openPrintOne);
+  document.getElementById('dashPrintOneBtn').addEventListener('click', openPrintOne);
+
+  /* ── Numpad ── */
+  function openNumpad(no, type) {
+    if (userRole==='parent') return;
+    selStudent = students.find(function(s){ return String(s.no)===String(no); });
+    if (!selStudent) return;
+    selType  = type==='deposit'?'ฝาก':'ถอน';
+    inputVal = '';
+    var pill = document.getElementById('type-pill');
+    pill.textContent = selType==='ฝาก'?'+ ฝากเงิน':'− ถอนเงิน';
+    pill.className   = 'type-pill '+type;
+    document.getElementById('np-name').textContent = selStudent.name;
+    document.getElementById('np-bal').textContent  = 'ยอดปัจจุบัน ฿'+fmt(selStudent.balance);
+    document.getElementById('btn-ok').className    = 'btn-ok '+type;
+    document.getElementById('overlay').dataset.mode = 'savings';
+    refreshDisplay();
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closeNumpad(){
+    document.getElementById('overlay').classList.remove('open');
+    inputVal='';
+  }
+
+  document.querySelectorAll('.num-btn[data-v]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var v=btn.dataset.v;
+      if (inputVal.length>=7) return;
+      if (!inputVal&&(v==='00'||v==='0')) return;
+      inputVal+=v; refreshDisplay();
+    });
+  });
+  document.getElementById('btn-del').addEventListener('click', function(){ inputVal=inputVal.slice(0,-1); refreshDisplay(); });
+  document.getElementById('btn-cancel').addEventListener('click', closeNumpad);
+  document.getElementById('overlay').addEventListener('click', function(e){ if(e.target===this) closeNumpad(); });
+
+  function refreshDisplay(){
+    var disp=document.getElementById('amount-display'), ok=document.getElementById('btn-ok');
+    var n=parseInt(inputVal,10), has=inputVal!==''&&n>0;
+    if(has){
+      disp.textContent='฿ '+fmt(n); disp.className='amount-display has-val';
+    } else {
+      disp.textContent='กรอกจำนวนเงิน'; disp.className='amount-display empty';
+    }
+    ok.disabled=!has;
+  }
+
+  document.getElementById('btn-ok').addEventListener('click', function(){
+    if (userRole==='parent') return;
+    var amount=parseInt(inputVal,10);
+    if(!amount||amount<=0) return;
+
+    {
+      /* ── ฝาก/ถอนเงินออม ── */
+      var no=selStudent.no, type=selType;
+      closeNumpad(); showSpinner(true);
+      google.script.run
+        .withSuccessHandler(function(r){
+          showSpinner(false);
+          if(r.success){
+            var idx=students.findIndex(function(s){return s.no===no;});
+            if(idx!==-1) students[idx].balance=r.newBalance;
+            renderAll();
+            toast(r.type+' ฿'+fmt(amount)+'  —  '+r.studentName,'ok');
+          } else { toast(r.message,'err'); }
+        })
+        .withFailureHandler(function(){ showSpinner(false); toast('เกิดข้อผิดพลาด กรุณาลองใหม่','err'); })
+        .saveTransaction(no,type,amount);
+    }
+  });
+
+  /* ── Helpers ── */
+  function fmt(n){ return Number(n).toLocaleString('th-TH'); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function toast(msg,cls){
+    var wrap=document.getElementById('toastWrap'), el=document.createElement('div');
+    el.className='toast '+(cls||'');
+    var icon=cls==='ok'?'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>':cls==='err'?'<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>':'';
+    el.innerHTML=icon+esc(msg); wrap.appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },4000);
+  }
+
+  function showSpinner(show){ document.getElementById('spinner').classList.toggle('show',show); }
+</script>
+</body>
+</html>

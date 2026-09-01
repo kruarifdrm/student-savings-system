@@ -1,0 +1,13 @@
+# ค่าเฉพาะเครื่อง / เฉพาะโรงเรียน
+.firebaserc
+.firebase/
+firebase-debug.log
+*.log
+
+# ระบบปฏิบัติการ / เอดิเตอร์
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+node_modules/
