@@ -39,17 +39,35 @@
   .warn{background:#fff8e6;border:1px solid #f0dba8;border-radius:12px;padding:14px 16px;font-size:.88rem;margin-bottom:16px}
   code{background:var(--primary-2);padding:1px 6px;border-radius:5px;font-size:.85em}
   a{color:var(--primary)}
+  .authbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .authbar .who{flex:1;min-width:190px;font-size:.9rem;font-weight:600}
+  .authbar .who small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
+  .gbtn{display:flex;align-items:center;gap:9px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>ตั้งค่าระบบออมทรัพย์นักเรียน</h1>
-  <p class="sub">หน้านี้ใช้ตอนติดตั้งครั้งแรก — เพิ่มรายชื่อนักเรียนและตั้งรหัสครู</p>
+  <p class="sub">หน้านี้ใช้ตอนติดตั้งครั้งแรก — ใส่รายชื่อนักเรียนเข้าระบบ</p>
+
+  <div class="authbar">
+    <div class="who" id="who">กำลังตรวจสอบสิทธิ์...</div>
+    <button class="gbtn" id="btnSignIn" style="display:none">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.6l6.2 5.2C41.1 35.6 44 30.3 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+      </svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
+    <button class="ghost" id="btnSignOut" style="display:none">ออกจากระบบ</button>
+  </div>
 
   <div class="warn">
-    หน้านี้ <b>ไม่มีการล็อกอิน</b> ใครเปิดก็แก้ข้อมูลได้ ถ้า deploy ขึ้นเว็บแล้ว
-    แนะนำให้ใช้เสร็จแล้วลบไฟล์ <code>setup.html</code> ออกจากเว็บ
-    (เก็บไว้ในเครื่อง แล้วเปิดใหม่เมื่อต้องใช้)
+    ต้องเข้าสู่ระบบด้วย <b>บัญชี Google ที่อยู่ในรายชื่อครู</b> ก่อนถึงจะบันทึกข้อมูลได้
+    (รายชื่อกำหนดที่ <code>firebase-config.js</code> และ <code>firestore.rules</code>)
   </div>
 
   <div class="card">
@@ -65,7 +83,7 @@
       ถ้าไม่ติ๊ก เลขที่ที่มีอยู่แล้วจะถูกข้าม</span>
     </label>
     <div class="row">
-      <button id="btnSave">บันทึกรายชื่อ</button>
+      <button id="btnSave" disabled>บันทึกรายชื่อ</button>
       <button class="ghost" id="btnPreview">ดูตัวอย่างก่อน</button>
     </div>
     <div class="msg" id="msg1"></div>
@@ -73,15 +91,7 @@
   </div>
 
   <div class="card">
-    <h2>2 · รหัสผ่านครู</h2>
-    <p class="hint">ระบบเก็บเฉพาะค่า hash (SHA-256) ไม่ได้เก็บตัวรหัส — ตั้งใหม่ได้ตลอด</p>
-    <input type="password" id="pw" placeholder="รหัสใหม่ อย่างน้อย 4 ตัว" autocomplete="new-password">
-    <div class="row"><button id="btnPw">ตั้งรหัสผ่าน</button></div>
-    <div class="msg" id="msg2"></div>
-  </div>
-
-  <div class="card">
-    <h2>3 · ข้อมูลที่มีอยู่ตอนนี้</h2>
+    <h2>2 · ข้อมูลที่มีอยู่ตอนนี้</h2>
     <div class="row" style="margin-top:0"><button class="ghost" id="btnLoad">โหลดรายชื่อปัจจุบัน</button></div>
     <div id="list"></div>
   </div>
@@ -91,6 +101,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
 (function(){
@@ -111,6 +122,69 @@
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
     });
   }
+
+
+  /* ══ ตัวตนผู้ใช้ ══
+     อ่านข้อมูลใช้บัญชี anonymous ก็พอ แต่การเขียนต้องเป็นครูที่ล็อกอิน Google
+     และอยู่ในรายชื่อที่อนุญาต (firestore.rules กันจริงอีกชั้นฝั่งเซิร์ฟเวอร์) */
+  var auth = firebase.auth();
+  var TEACHERS_FALLBACK = (window.TEACHER_EMAILS || []).map(function(e){ return String(e).toLowerCase(); });
+
+  function isTeacher(){ var u = auth.currentUser; return !!(u && !u.isAnonymous); }
+
+  function allowedTeachers(){
+    return db.doc('config/teachers').get()
+      .then(function(snap){
+        var list = (snap.exists && snap.data().emails) || [];
+        return (list.length ? list : TEACHERS_FALLBACK).map(function(e){ return String(e).toLowerCase(); });
+      })
+      .catch(function(){ return TEACHERS_FALLBACK; });
+  }
+
+  function paintAuth(){
+    var teacher = isTeacher();
+    var u = auth.currentUser;
+    $('who').innerHTML = teacher
+      ? 'เข้าสู่ระบบเป็นครู<small>' + esc(u.email || '') + '</small>'
+      : 'ยังไม่ได้เข้าสู่ระบบ<small>ดูข้อมูลได้ แต่ยังบันทึกไม่ได้</small>';
+    $('btnSignIn').style.display  = teacher ? 'none' : 'flex';
+    $('btnSignOut').style.display = teacher ? 'inline-block' : 'none';
+    $('btnSave').disabled = !teacher;
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if (!user) {
+      auth.signInAnonymously().catch(function(err){
+        $('who').innerHTML = 'เข้าระบบอัตโนมัติไม่สำเร็จ<small>' + esc(err.code || '') +
+          ' — ตรวจว่าเปิด provider Anonymous ใน Firebase Console แล้วหรือยัง</small>';
+      });
+      return;
+    }
+    paintAuth();
+  });
+
+  $('btnSignIn').addEventListener('click', function(){
+    var btn = this;
+    btn.disabled = true;
+    var provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    auth.signInWithPopup(provider).then(function(res){
+      var email = ((res.user && res.user.email) || '').toLowerCase();
+      return allowedTeachers().then(function(list){
+        if (list.indexOf(email) !== -1) return;
+        return auth.signOut().then(function(){
+          alert('อีเมล ' + email + ' ยังไม่มีสิทธิ์ครู\nเพิ่มอีเมลนี้ใน firebase-config.js และ firestore.rules ก่อน');
+        });
+      });
+    }).catch(function(err){
+      var code = err && err.code;
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        alert('เข้าสู่ระบบไม่สำเร็จ' + (code ? ' (' + code + ')' : ''));
+      }
+    }).then(function(){ btn.disabled = false; });
+  });
+
+  $('btnSignOut').addEventListener('click', function(){ auth.signOut(); });
 
   /* แปลงข้อความในกล่องเป็นรายการ {no, name} */
   function parseNames(){
@@ -191,30 +265,6 @@
     });
   });
 
-  function sha256hex(str){
-    var buf = new TextEncoder().encode(String(str));
-    return crypto.subtle.digest('SHA-256', buf).then(function(h){
-      return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
-    });
-  }
-
-  $('btnPw').addEventListener('click', function(){
-    var v = $('pw').value;
-    if (v.length < 4) { say('msg2', 'รหัสสั้นเกินไป อย่างน้อย 4 ตัว', 'err'); return; }
-    var btn = this;
-    btn.disabled = true;
-    say('msg2', 'กำลังบันทึก...', '');
-    sha256hex(v).then(function(hash){
-      return appDoc.set({ teacherPwHash: hash }, { merge: true });
-    }).then(function(){
-      $('pw').value = '';
-      say('msg2', 'ตั้งรหัสผ่านครูเรียบร้อยแล้ว', 'ok');
-      btn.disabled = false;
-    }).catch(function(e){
-      say('msg2', 'บันทึกไม่สำเร็จ: ' + (e.message || e), 'err');
-      btn.disabled = false;
-    });
-  });
 
   $('btnLoad').addEventListener('click', function(){
     $('list').innerHTML = '<p class="hint">กำลังโหลด...</p>';

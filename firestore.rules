@@ -1,18 +1,20 @@
 /* ─────────────────────────────────────────────────────────────
    กฎความปลอดภัย Firestore — ระบบออมทรัพย์นักเรียน
 
-   ⚠ อ่านก่อนใช้งานจริง
-   แอปนี้ไม่ได้ใช้ Firebase Authentication (ครูล็อกอินด้วยรหัสผ่าน
-   ที่ตรวจฝั่งหน้าจอเท่านั้น) กฎด้านล่างจึงต้องเปิดให้อ่าน-เขียนได้
-   โดยไม่ต้องล็อกอิน = ใครรู้ค่า config ในเว็บก็เข้าถึงข้อมูลได้
+   บทบาท
+     · ครู        = บัญชี Google ที่ยืนยันอีเมลแล้ว และอยู่ในรายชื่อ isTeacher()
+                    → อ่านและเขียนได้
+     · ผู้ปกครอง  = บัญชี anonymous ที่แอปสร้างให้อัตโนมัติ → อ่านอย่างเดียว
+     · คนไม่ล็อกอิน = อ่านหรือเขียนอะไรไม่ได้เลย
 
-   เหมาะกับข้อมูลระดับ "ยอดออมของนักเรียนในห้อง" ที่ไม่ใช่ความลับ
-   ถ้าจะเก็บข้อมูลที่อ่อนไหวกว่านี้ ต้องเพิ่ม Firebase Auth ก่อน
+   ⚠ ต้องแก้ 2 ที่ให้ตรงกันเสมอ
+     1. อีเมลใน isTeacher() ไฟล์นี้      ← ตัวคุมสิทธิ์จริง
+     2. window.TEACHER_EMAILS ใน firebase-config.js  ← ใช้กับหน้าจอเท่านั้น
+     ถ้าใส่ไม่ตรงกัน จะเข้าหน้าครูได้แต่บันทึกข้อมูลไม่ได้
 
-   สิ่งที่กฎชุดนี้ทำได้จริง
-     · จำกัดขอบเขตไว้แค่ใต้ savings/ เท่านั้น
-       collection อื่นในโปรเจกต์เดียวกันไม่ถูกเปิดตามไปด้วย
-     · กันเอกสารขนาดใหญ่ผิดปกติด้วยการตรวจชนิดข้อมูลของนักเรียน
+   ต้องเปิด provider ทั้งสองแบบใน Firebase Console → Authentication → Sign-in method
+     · Google      (สำหรับครู)
+     · Anonymous   (สำหรับผู้ปกครอง/นักเรียน)
 
    deploy กฎ:  firebase deploy --only firestore:rules
    ───────────────────────────────────────────────────────────── */
@@ -22,14 +24,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* เอกสารตั้งค่า savings/app (เก็บ teacherPwHash) */
-    match /savings/{docId} {
-      allow read, write: if true;
+    function signedIn() {
+      return request.auth != null;
+    }
 
-      /* ข้อมูลจริงอยู่ใน subcollection: students, transactions
-         Firestore ไม่ cascade ลง subcollection ต้องมี match ครอบ */
+    function isTeacher() {
+      return signedIn()
+             && request.auth.token.email_verified == true
+             && request.auth.token.email in [
+                  'kru@example.com'
+                ];
+    }
+
+    /* รายชื่อครู (ถ้าอยากคุมจากฐานข้อมูลแทนการแก้ไฟล์นี้)
+       เอกสาร config/teachers เก็บฟิลด์ emails เป็น list ของอีเมล
+       หมายเหตุ: ตัวคุมสิทธิ์จริงยังเป็น isTeacher() ด้านบนเสมอ */
+    match /config/{doc} {
+      allow read:  if signedIn();
+      allow write: if isTeacher();
+    }
+
+    /* ข้อมูลออมทรัพย์อยู่ใน savings/app และ subcollection ใต้เอกสารนั้น
+       (students, transactions) Firestore ไม่ cascade ลง subcollection เอง
+       ต้องมี match /{document=**} ครอบด้วย */
+    match /savings/{docId} {
+      allow read:  if signedIn();
+      allow write: if isTeacher();
+
       match /{document=**} {
-        allow read, write: if true;
+        allow read:  if signedIn();
+        allow write: if isTeacher();
       }
     }
 

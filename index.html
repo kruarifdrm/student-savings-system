@@ -104,7 +104,10 @@
     .pw-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
     .pw-err { font-size: 0.8rem; color: var(--withdraw); font-weight: 700; min-height: 18px; margin-bottom: 8px; }
     .pw-submit { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
+    .pw-submit { display: flex; align-items: center; justify-content: center; gap: 9px; }
     .pw-submit:hover { opacity: .88; }
+    .pw-submit:disabled { opacity: .55; cursor: default; }
+    .pw-note { font-size: 0.78rem; color: var(--muted); line-height: 1.6; margin: 0 0 10px; }
 
     /* parent enter btn */
     .parent-btn { display: none; width: min(100%, 340px); padding: 14px; background: var(--deposit); color: #fff; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
@@ -434,20 +437,23 @@
     </div>
   </div>
 
-  <!-- password box (teacher) -->
+  <!-- teacher sign-in (Google) -->
   <div class="pw-box" id="pwBox">
     <div class="pw-label">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      รหัสผ่านครู
+      เข้าสู่ระบบสำหรับครู
     </div>
-    <div class="pw-input-wrap">
-      <input class="pw-input" id="pwInput" type="password" inputmode="numeric" placeholder="••••••" maxlength="10" autocomplete="off">
-      <button class="pw-toggle" id="pwToggle" type="button">
-        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    </div>
+    <p class="pw-note">ใช้ได้เฉพาะบัญชี Google ที่อยู่ในรายชื่อครูของระบบ</p>
     <div class="pw-err" id="pwErr"></div>
-    <button class="pw-submit" onclick="submitPassword()">เข้าสู่ระบบ</button>
+    <button class="pw-submit" id="googleBtn" onclick="signInTeacher()">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.6l6.2 5.2C41.1 35.6 44 30.3 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+      </svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
   </div>
 
   <!-- parent enter button -->
@@ -727,6 +733,7 @@
 <!-- ══ Firebase SDK ══ -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
 <!-- ตั้งค่าโปรเจกต์ Firebase ของโรงเรียนคุณเองที่ไฟล์นี้ (ดู README) -->
 <script src="firebase-config.js"></script>
@@ -751,9 +758,80 @@
   var colPE   = appDoc.collection('pe');
   var colPETx = appDoc.collection('peTx');
 
-  /* รหัสครูเริ่มต้น ใช้เฉพาะตอนที่ยังไม่เคยตั้งรหัสไว้ใน Firestore
-     เปลี่ยนได้ที่ firebase-config.js (DEFAULT_TEACHER_PW) หรือตั้งรหัสจริงผ่าน setup.html */
-  var DEFAULT_TEACHER_PW = String(window.DEFAULT_TEACHER_PW || '123456');
+  /* ══ ตัวตนผู้ใช้ ══
+     ผู้ปกครอง/นักเรียน = บัญชี anonymous (อ่านอย่างเดียว)
+     ครู                = บัญชี Google ที่อยู่ในรายชื่อครู (เขียนได้)
+     ตัวคุมสิทธิ์จริงคือ firestore.rules ฝั่งเซิร์ฟเวอร์ โค้ดตรงนี้แค่ทำให้ UI ถูกต้อง */
+  var auth = firebase.auth();
+  var TEACHERS_DOC = 'config/teachers';
+  var TEACHERS_FALLBACK = (window.TEACHER_EMAILS || []).map(function(e){ return String(e).toLowerCase(); });
+  var authListeners = [];
+
+  function isTeacherUser() {
+    var u = auth.currentUser;
+    return !!(u && !u.isAnonymous);
+  }
+
+  /* รอให้ Firebase มีตัวตนให้ก่อน ทุกคำสั่งอ่าน-เขียนต้องผ่านตรงนี้
+     ไม่งั้นจะยิงคำสั่งตั้งแต่ยังไม่ล็อกอิน แล้วโดน rules ปฏิเสธ */
+  var authReady = new Promise(function(resolve) {
+    var settled = false;
+    auth.onAuthStateChanged(function(user) {
+      if (!user) {
+        auth.signInAnonymously().catch(function(err) {
+          /* ถ้ายังไม่ได้เปิด provider Anonymous ใน Console จะเข้าตรงนี้ */
+          console.error('anonymous sign-in failed', err.code, err.message);
+          if (!settled) { settled = true; resolve(null); }
+        });
+        return;
+      }
+      if (!settled) { settled = true; resolve(user); }
+      authListeners.forEach(function(f){ try { f(user); } catch (e) { console.error(e); } });
+    });
+  });
+
+  /* รายชื่อครูที่อนุญาต อ่านจาก config/teachers ถ้าอ่านไม่ได้ใช้รายชื่อใน firebase-config.js */
+  function allowedTeachers() {
+    return db.doc(TEACHERS_DOC).get()
+      .then(function(snap) {
+        var list = (snap.exists && snap.data().emails) || [];
+        return (list.length ? list : TEACHERS_FALLBACK)
+                 .map(function(e){ return String(e).toLowerCase(); });
+      })
+      .catch(function(){ return TEACHERS_FALLBACK; });
+  }
+
+  window.SavingsAuth = {
+    ready:     authReady,
+    isTeacher: isTeacherUser,
+    email:     function(){ var u = auth.currentUser; return (u && u.email) || ''; },
+    onChange:  function(f){ authListeners.push(f); },
+
+    /* ครูเข้าด้วย Google แล้วเทียบอีเมลกับรายชื่อที่อนุญาต
+       ถ้าไม่อยู่ในรายชื่อให้ออกจากระบบทันที ไม่ปล่อยให้ค้างสถานะครู */
+    signIn: function() {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      return auth.signInWithPopup(provider).then(function(res) {
+        var email = ((res.user && res.user.email) || '').toLowerCase();
+        return allowedTeachers().then(function(list) {
+          if (list.indexOf(email) !== -1) return { ok: true, email: email };
+          return auth.signOut().then(function(){
+            return { ok: false, reason: 'not-allowed', email: email };
+          });
+        });
+      }).catch(function(err) {
+        var code = err && err.code;
+        if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+          return { ok: false, reason: 'cancelled' };
+        }
+        return { ok: false, reason: 'error', code: code || String(err) };
+      });
+    },
+
+    signOut: function(){ return auth.signOut().catch(function(){}); }
+  };
+
 
   function nowParts() {
     var d = new Date();
@@ -764,12 +842,6 @@
     };
   }
 
-  function sha256hex(str) {
-    var buf = new TextEncoder().encode(String(str));
-    return crypto.subtle.digest('SHA-256', buf).then(function(h) {
-      return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-    });
-  }
 
   var _stuCache = null;   // [{no,name,balance,photo}]
   function fetchStudents(force) {
@@ -806,17 +878,6 @@
       return Promise.resolve('ระบบ Firebase พร้อมใช้งานแล้ว');
     },
 
-    verifyTeacherPassword: function(pw) {
-      return appDoc.get().then(function(d) {
-        var storedHash = d.exists ? d.data().teacherPwHash : null;
-        return sha256hex(pw).then(function(inputHash) {
-          if (storedHash) return { ok: inputHash === storedHash, token: 'fb' };
-          return sha256hex(DEFAULT_TEACHER_PW).then(function(defHash) {
-            return { ok: inputHash === defHash, token: 'fb' };
-          });
-        });
-      }).then(function(r){ return r.ok ? r : { ok: false }; });
-    },
 
     getStudents: function() {
       return fetchStudents(true).then(function(list) {
@@ -992,11 +1053,22 @@
   function Runner() { this._ok = function(){}; this._err = function(e){ console.error(e); }; }
   Runner.prototype.withSuccessHandler = function(f){ this._ok = f || this._ok; return this; };
   Runner.prototype.withFailureHandler = function(f){ this._err = f || this._err; return this; };
+  /* คำสั่งที่เขียนฐานข้อมูล ต้องเป็นครูที่ล็อกอิน Google อยู่เท่านั้น
+     (firestore.rules กันจริงอีกชั้นฝั่งเซิร์ฟเวอร์) */
+  var WRITE_METHODS = {
+    saveTransaction: 1, deleteTransaction: 1, recordPEPayment: 1, deductPEFromSavings: 1
+  };
+
   Object.keys(api).forEach(function(name) {
     Runner.prototype[name] = function() {
       var args = arguments, self = this;
-      Promise.resolve()
-        .then(function(){ return api[name].apply(null, args); })
+      authReady
+        .then(function(){
+          if (WRITE_METHODS[name] && !isTeacherUser()) {
+            return { success: false, message: 'ต้องเข้าสู่ระบบด้วยบัญชีครูก่อน' };
+          }
+          return api[name].apply(null, args);
+        })
         .then(function(r){ self._ok(r); })
         .catch(function(e){ self._err(e); });
     };
@@ -1028,45 +1100,32 @@
     document.getElementById('cardParent').classList.toggle('selected',  role==='parent');
     document.getElementById('pwBox').classList.toggle('show',    role==='teacher');
     document.getElementById('parentBtn').classList.toggle('show', role==='parent');
-    if (role==='teacher') { document.getElementById('pwInput').focus(); document.getElementById('pwErr').textContent=''; }
+    if (role==='teacher') document.getElementById('pwErr').textContent = '';
   }
 
-  function submitPassword() {
-    var v = document.getElementById('pwInput').value;
-    if (!v) return;
-    var btn = document.querySelector('.pw-submit');
+  function signInTeacher() {
+    var btn = document.getElementById('googleBtn');
+    var err = document.getElementById('pwErr');
     btn.disabled = true;
-    google.script.run
-      .withSuccessHandler(function(res) {
-        btn.disabled = false;
-        if (res && res.ok) {
-          enterApp('teacher');
-        } else {
-          document.getElementById('pwErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
-          document.getElementById('pwInput').value = '';
-          document.getElementById('pwInput').focus();
-        }
-      })
-      .withFailureHandler(function() {
-        btn.disabled = false;
-        document.getElementById('pwErr').textContent = 'เชื่อมต่อไม่ได้ ลองใหม่';
-      })
-      .verifyTeacherPassword(v);
+    err.textContent = '';
+    SavingsAuth.signIn().then(function(r) {
+      btn.disabled = false;
+      if (r.ok) { enterApp('teacher'); return; }
+      if (r.reason === 'cancelled') return;
+      if (r.reason === 'not-allowed') {
+        err.textContent = 'อีเมล ' + r.email + ' ยังไม่มีสิทธิ์ครู';
+      } else if (r.code === 'auth/unauthorized-domain') {
+        /* เจอบ่อยตอนติดตั้งครั้งแรก โดเมนของเว็บยังไม่อยู่ในรายชื่อที่อนุญาต */
+        err.textContent = 'โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่ม ' + location.hostname +
+          ' ที่ Firebase Console → Authentication → Settings → Authorized domains';
+      } else {
+        err.textContent = 'เข้าสู่ระบบไม่สำเร็จ' + (r.code ? ' (' + r.code + ')' : '');
+      }
+    });
   }
 
   function enterAsParent() { enterApp('parent'); }
 
-  document.getElementById('pwInput').addEventListener('keydown', function(e){ if(e.key==='Enter') submitPassword(); });
-
-  /* show/hide password */
-  document.getElementById('pwToggle').addEventListener('click', function(){
-    var inp = document.getElementById('pwInput');
-    var isText = inp.type === 'text';
-    inp.type = isText ? 'password' : 'text';
-    document.getElementById('eyeIcon').innerHTML = isText
-      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
-      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-  });
 
   /* ══ Enter app ══ */
   function enterApp(role) {
@@ -1114,6 +1173,8 @@
   }
 
   function doLogout() {
+    /* ครูออกจากบัญชี Google ด้วย แล้ว onAuthStateChanged จะพากลับไปเป็น anonymous เอง */
+    if (userRole === 'teacher') SavingsAuth.signOut();
     sessionStorage.removeItem('role');
     userRole = '';
     students = [];
@@ -1124,19 +1185,30 @@
     document.getElementById('cardParent').classList.remove('selected');
     document.getElementById('pwBox').classList.remove('show');
     document.getElementById('parentBtn').classList.remove('show');
-    document.getElementById('pwInput').value = '';
     document.getElementById('pwErr').textContent = '';
     document.getElementById('roleScreen').classList.add('show');
     switchTab('dashboard');
   }
 
   /* ══ Boot ══ */
-  var savedRole = sessionStorage.getItem('role');
-  if (savedRole) {
-    enterApp(savedRole);
-  } else {
-    document.getElementById('roleScreen').classList.add('show');
-  }
+  SavingsAuth.ready.then(function() {
+    var savedRole = sessionStorage.getItem('role');
+    /* กลับมาเป็นครูได้เฉพาะตอนที่บัญชี Google ยังอยู่จริง */
+    if (savedRole === 'teacher' && !SavingsAuth.isTeacher()) {
+      sessionStorage.removeItem('role');
+      savedRole = null;
+    }
+    if (savedRole) enterApp(savedRole);
+    else document.getElementById('roleScreen').classList.add('show');
+  });
+
+  /* บัญชีครูหลุดระหว่างใช้งาน (หมดอายุ หรือออกจากระบบจากแท็บอื่น) ต้องถีบออกทันที */
+  SavingsAuth.onChange(function() {
+    if (userRole === 'teacher' && !SavingsAuth.isTeacher()) {
+      toast('เซสชันครูหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'err');
+      doLogout();
+    }
+  });
 
   /* ── Setup ── */
   document.getElementById('setupBtn').addEventListener('click', function() {

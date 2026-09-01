@@ -15,6 +15,7 @@ window.FIREBASE_CONFIG = {
   appId:             "YOUR_APP_ID"
 };
 
-/* รหัสครูเริ่มต้น — ใช้ได้จนกว่าจะตั้งรหัสจริงผ่าน setup.html
-   เปลี่ยนตัวเลขนี้ก่อนใช้งานจริงเสมอ */
-window.DEFAULT_TEACHER_PW = "123456";
+/* รายชื่ออีเมลครูที่มีสิทธิ์แก้ไขข้อมูล (ครูล็อกอินด้วยบัญชี Google)
+   ⚠ ต้องใส่อีเมลชุดเดียวกันนี้ใน firestore.rules ด้วย (ฟังก์ชัน isTeacher)
+     ไม่งั้นจะเข้าหน้าครูได้แต่บันทึกข้อมูลไม่ได้ */
+window.TEACHER_EMAILS = ["kru@example.com"];
