@@ -38,10 +38,12 @@ service cloud.firestore {
 
     /* รายชื่อครู (ถ้าอยากคุมจากฐานข้อมูลแทนการแก้ไฟล์นี้)
        เอกสาร config/teachers เก็บฟิลด์ emails เป็น list ของอีเมล
-       หมายเหตุ: ตัวคุมสิทธิ์จริงยังเป็น isTeacher() ด้านบนเสมอ */
+       หมายเหตุ: ตัวคุมสิทธิ์จริงยังเป็น isTeacher() ด้านบนเสมอ
+
+       อ่านได้เฉพาะครู — ไม่ให้ผู้ปกครอง/คนทั่วไปดึงอีเมลครูไปได้
+       ถ้าอ่านไม่ได้ แอปจะถอยไปใช้ window.TEACHER_EMAILS ใน firebase-config.js เอง */
     match /config/{doc} {
-      allow read:  if signedIn();
-      allow write: if isTeacher();
+      allow read, write: if isTeacher();
     }
 
     /* ข้อมูลออมทรัพย์อยู่ใน savings/app และ subcollection ใต้เอกสารนั้น
