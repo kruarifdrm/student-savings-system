@@ -289,6 +289,38 @@
 
     .empty-state { text-align: center; padding: 52px 20px; color: var(--muted); line-height: 1.7; font-weight: 600; }
 
+    /* ── เมนูตั้งค่า ── */
+    .set-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .mini-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-pill); background: var(--surface); color: var(--text-2); font-size: 0.78rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: border-color var(--tr), color var(--tr); }
+    .mini-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .mini-btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .mini-btn.danger:hover { border-color: var(--withdraw); color: var(--withdraw); }
+    .set-form { display: none; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 14px; }
+    .set-form.show { display: flex; }
+    .set-form .f-title { width: 100%; font-size: 0.85rem; font-weight: 800; color: var(--text-2); }
+    .set-input { padding: 10px 12px; border: 1.5px solid var(--line); border-radius: var(--radius); font-size: 0.92rem; font-family: inherit; background: var(--surface-2); color: var(--text); outline: none; }
+    .set-input:focus { border-color: var(--primary); background: var(--surface); }
+    .set-input.no { width: 84px; text-align: center; }
+    .set-input.name { flex: 1; min-width: 170px; }
+    .set-input:disabled { opacity: .6; }
+    .import-box { display: none; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 14px; }
+    .import-box.show { display: block; }
+    .import-box textarea { width: 100%; min-height: 130px; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: var(--radius); font-family: inherit; font-size: 0.92rem; line-height: 1.8; background: var(--surface-2); color: var(--text); outline: none; resize: vertical; }
+    .import-box textarea:focus { border-color: var(--primary); background: var(--surface); }
+    .import-note { font-size: 0.78rem; color: var(--muted); line-height: 1.7; margin: 0 0 10px; }
+    .import-chk { display: flex; gap: 8px; align-items: flex-start; font-size: 0.8rem; color: var(--muted); margin-top: 10px; cursor: pointer; }
+    .set-msg { font-size: 0.84rem; font-weight: 700; margin-top: 10px; white-space: pre-line; }
+    .set-msg.ok  { color: var(--deposit); }
+    .set-msg.err { color: var(--withdraw); }
+    .stu-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .stu-table th, .stu-table td { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    .stu-table th { font-size: 0.74rem; color: var(--muted); font-weight: 800; }
+    .stu-table td.r, .stu-table th.r { text-align: right; }
+    .stu-table td.acts { white-space: nowrap; }
+    .stu-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 0.72rem; font-weight: 800; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .stu-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .stu-scroll { overflow-x: auto; }
+
     /* ══ Print ══ */
     #print-all-area, #print-one-area, #print-dash-area, #print-hist-area { display: none; }
 
@@ -513,6 +545,51 @@
     </div>
 
 
+    <!-- ตั้งค่า (เฉพาะครู) -->
+    <div class="view" id="view-settings">
+      <p class="section-title">จัดการรายชื่อนักเรียน</p>
+
+      <div class="set-toolbar">
+        <button class="mini-btn primary" id="btnAddStu">+ เพิ่มนักเรียน</button>
+        <button class="mini-btn" id="btnImportOpen">นำเข้ารายชื่อ</button>
+        <button class="mini-btn" id="btnExport">ส่งออก CSV</button>
+        <button class="mini-btn" id="btnTemplate">ดาวน์โหลดไฟล์ตัวอย่าง</button>
+      </div>
+
+      <div class="set-form" id="stuForm">
+        <div class="f-title" id="stuFormTitle">เพิ่มนักเรียนใหม่</div>
+        <input class="set-input no"   id="stuNo"   type="number" min="1" max="999" placeholder="เลขที่">
+        <input class="set-input name" id="stuName" type="text" placeholder="ชื่อ-สกุล" autocomplete="off">
+        <button class="mini-btn primary" id="btnStuSave">บันทึก</button>
+        <button class="mini-btn" id="btnStuCancel">ยกเลิก</button>
+      </div>
+
+      <div class="import-box" id="importBox">
+        <p class="import-note">
+          วางรายชื่อทีละบรรทัด หรือเลือกไฟล์ CSV ที่ส่งออกจาก Excel / Google Sheets<br>
+          พิมพ์แค่ชื่อ = ระบบไล่เลขที่ให้เอง · อยากกำหนดเลขที่เองใช้ <b>5, สมชาย ใจดี</b> หรือ <b>5 สมชาย ใจดี</b>
+        </p>
+        <textarea id="importText" placeholder="สมชาย ใจดี&#10;สมหญิง รักเรียน&#10;7, อารีย์ มานะ"></textarea>
+        <div class="set-toolbar" style="margin: 10px 0 0">
+          <label class="mini-btn" for="importFile">เลือกไฟล์ CSV</label>
+          <input type="file" id="importFile" accept=".csv,.txt,text/csv,text/plain" style="display:none">
+          <button class="mini-btn" id="btnImportPreview">ดูตัวอย่างก่อน</button>
+          <button class="mini-btn primary" id="btnImportRun">นำเข้ารายชื่อ</button>
+          <button class="mini-btn" id="btnImportClose">ปิด</button>
+        </div>
+        <label class="import-chk">
+          <input type="checkbox" id="importOverwrite">
+          <span>เขียนทับชื่อของเลขที่ที่มีอยู่แล้ว (ยอดเงินคงเดิม ไม่ถูกแตะ)<br>ถ้าไม่ติ๊ก เลขที่ที่มีอยู่แล้วจะถูกข้าม</span>
+        </label>
+        <div class="set-msg" id="importMsg"></div>
+        <div id="importPreview"></div>
+      </div>
+
+      <div class="set-msg" id="setMsg"></div>
+      <div class="stu-scroll" id="stu-list"><div class="empty-state">กำลังโหลด...</div></div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+    </div>
+
     <!-- ประวัติ -->
     <div class="view" id="view-history">
       <div id="hist-grid-view">
@@ -557,6 +634,10 @@
     <a id="tab-withdraw" onclick="switchTab('withdraw')">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span>ถอน</span>
+    </a>
+    <a id="tab-settings" onclick="switchTab('settings')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>ตั้งค่า</span>
     </a>
     <a id="tab-history" onclick="switchTab('history')">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -882,6 +963,75 @@
       });
     },
 
+    /* ── จัดการรายชื่อนักเรียน (เมนูตั้งค่า) ── */
+    saveStudent: function(no, name, photo) {
+      no   = Number(no);
+      name = String(name || '').trim();
+      if (!no || no < 1 || no > 999) return Promise.resolve({ success: false, message: 'เลขที่ต้องเป็นตัวเลข 1-999' });
+      if (!name)                     return Promise.resolve({ success: false, message: 'ยังไม่ได้ใส่ชื่อ' });
+
+      var ref = colStu.doc(String(no));
+      return ref.get().then(function(d) {
+        var data = { no: no, name: name };
+        if (typeof photo === 'string') data.photo = photo;   /* ส่ง '' มาคือลบรูป */
+        if (!d.exists) data.balance = 0;                     /* คนใหม่เริ่มที่ศูนย์ ไม่ทับยอดคนเก่า */
+        return ref.set(data, { merge: true });
+      }).then(function() {
+        _stuCache = null;
+        return { success: true, isNew: true };
+      }).catch(function(e) {
+        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
+    deleteStudent: function(no) {
+      var ref = colStu.doc(String(no));
+      return ref.get().then(function(d) {
+        if (!d.exists) throw { _biz: true, message: 'ไม่พบข้อมูลนักเรียน' };
+        return ref.delete();
+      }).then(function() {
+        _stuCache = null;
+        return { success: true };
+      }).catch(function(e) {
+        if (e && e._biz) return { success: false, message: e.message };
+        return { success: false, message: 'ลบไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
+    /* นำเข้าทีละหลายคน — ยอดเงินของคนที่มีอยู่แล้วไม่ถูกแตะไม่ว่ากรณีใด */
+    importStudents: function(rows, overwrite) {
+      rows = (rows || []).filter(function(r) {
+        return r && Number(r.no) >= 1 && Number(r.no) <= 999 && String(r.name || '').trim();
+      });
+      if (!rows.length)      return Promise.resolve({ success: false, message: 'ไม่พบรายชื่อที่นำเข้าได้' });
+      if (rows.length > 300) return Promise.resolve({ success: false, message: 'นำเข้าได้ครั้งละไม่เกิน 300 คน' });
+
+      return colStu.get().then(function(snap) {
+        var existing = {};
+        snap.docs.forEach(function(d) { existing[d.id] = true; });
+
+        var batch = db.batch(), added = 0, updated = 0, skipped = 0;
+        rows.forEach(function(r) {
+          var id = String(Number(r.no)), name = String(r.name).trim();
+          if (!existing[id]) {
+            batch.set(colStu.doc(id), { no: Number(r.no), name: name, balance: 0 });
+            added++;
+          } else if (overwrite) {
+            batch.update(colStu.doc(id), { name: name });
+            updated++;
+          } else {
+            skipped++;
+          }
+        });
+        return batch.commit().then(function() {
+          _stuCache = null;
+          return { success: true, added: added, updated: updated, skipped: skipped };
+        });
+      }).catch(function(e) {
+        return { success: false, message: 'นำเข้าไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
     getAllTransactions: function() {
       return colTx.orderBy('ts', 'desc').limit(TX_LIMIT).get().then(function(snap) {
         return snap.docs.map(mapTxDoc);
@@ -932,7 +1082,7 @@
   Runner.prototype.withFailureHandler = function(f){ this._err = f || this._err; return this; };
   /* คำสั่งที่เขียนฐานข้อมูล ต้องเป็นครูที่ล็อกอิน Google อยู่เท่านั้น
      (firestore.rules กันจริงอีกชั้นฝั่งเซิร์ฟเวอร์) */
-  var WRITE_METHODS = { saveTransaction: 1, deleteTransaction: 1 };
+  var WRITE_METHODS = { saveTransaction: 1, deleteTransaction: 1, saveStudent: 1, deleteStudent: 1, importStudents: 1 };
 
   Object.keys(api).forEach(function(name) {
     Runner.prototype[name] = function() {
@@ -966,7 +1116,7 @@
   var inputVal   = '';
   var histStu    = null;
   var userRole   = '';   // 'teacher' | 'parent'
-  var TABS_ALL    = ['dashboard','deposit','withdraw','history'];
+  var TABS_ALL    = ['dashboard','deposit','withdraw','settings','history'];
   var TABS_PARENT = ['dashboard','history'];
 
   /* ══ Role screen ══ */
@@ -1022,6 +1172,7 @@
     /* ซ่อนแท็บ ฝาก/ถอน สำหรับ parent */
     document.getElementById('tab-deposit').classList.toggle('hidden-tab',  role==='parent');
     document.getElementById('tab-withdraw').classList.toggle('hidden-tab', role==='parent');
+    document.getElementById('tab-settings').classList.toggle('hidden-tab', role==='parent');
 
     document.getElementById('mainApp').classList.add('show');
     loadStudents();
@@ -1092,6 +1243,7 @@
     if (userRole==='teacher') {
       renderGrid('deposit-grid',  'deposit');
       renderGrid('withdraw-grid', 'withdraw');
+      renderSettings();
     }
   }
 
@@ -1161,12 +1313,13 @@
 
   /* ── Tab switch ── */
   function switchTab(name) {
-    if (userRole==='parent' && (name==='deposit'||name==='withdraw')) name='dashboard';
+    if (userRole==='parent' && (name==='deposit'||name==='withdraw'||name==='settings')) name='dashboard';
     TABS_ALL.forEach(function(t){
       document.getElementById('tab-'+t).classList.toggle('active', t===name);
       document.getElementById('view-'+t).classList.toggle('active', t===name);
     });
-    if (name === 'history') showHistGrid();
+    if (name === 'history')  showHistGrid();
+    if (name === 'settings') renderSettings();
   }
 
 
@@ -1609,6 +1762,335 @@
   });
 
   /* ── Helpers ── */
+
+  /* ══ ตั้งค่า: จัดการรายชื่อนักเรียน ══ */
+
+  function setMsg(id, text, cls) {
+    var el = document.getElementById(id);
+    el.textContent = text || '';
+    el.className = 'set-msg ' + (cls || '');
+  }
+
+  function nextStudentNo() {
+    var max = students.reduce(function(m, s){ return Math.max(m, Number(s.no) || 0); }, 0);
+    return max + 1;
+  }
+
+  function renderSettings() {
+    var el = document.getElementById('stu-list');
+    if (!students.length) {
+      el.innerHTML = '<div class="empty-state">ยังไม่มีรายชื่อนักเรียน<br>กด "เพิ่มนักเรียน" หรือ "นำเข้ารายชื่อ" เพื่อเริ่มต้น</div>';
+      return;
+    }
+    el.innerHTML = '<table class="stu-table"><thead><tr>' +
+        '<th style="width:52px">เลขที่</th><th style="width:44px"></th><th>ชื่อ-สกุล</th>' +
+        '<th class="r">ยอดคงเหลือ</th><th></th></tr></thead><tbody>' +
+      students.map(function(s) {
+        var av = photoMap[s.no] ? '<img src="' + esc(photoMap[s.no]) + '" alt="">' : s.no;
+        return '<tr>' +
+          '<td>' + s.no + '</td>' +
+          '<td><div class="stu-avatar">' + av + '</div></td>' +
+          '<td>' + esc(s.name) + '</td>' +
+          '<td class="r">฿' + fmt(s.balance) + '</td>' +
+          '<td class="acts r">' +
+            '<button class="mini-btn" data-act="photo" data-no="' + s.no + '">รูป</button> ' +
+            '<button class="mini-btn" data-act="edit"  data-no="' + s.no + '">แก้ไข</button> ' +
+            '<button class="mini-btn danger" data-act="del" data-no="' + s.no + '">ลบ</button>' +
+          '</td></tr>';
+      }).join('') + '</tbody></table>';
+
+    el.querySelectorAll('.mini-btn').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var no = Number(b.dataset.no);
+        if (b.dataset.act === 'edit')      openStudentForm(no);
+        else if (b.dataset.act === 'del')  removeStudent(no);
+        else                               pickPhoto(no);
+      });
+    });
+  }
+
+  /* ── เพิ่ม / แก้ไขรายคน ── */
+  function openStudentForm(no) {
+    var s = no ? students.find(function(x){ return x.no === no; }) : null;
+    document.getElementById('stuFormTitle').textContent = s ? 'แก้ไขชื่อ (เลขที่ ' + s.no + ')' : 'เพิ่มนักเรียนใหม่';
+    var noInput = document.getElementById('stuNo');
+    noInput.value    = s ? s.no : nextStudentNo();
+    noInput.disabled = !!s;          /* เลขที่คือรหัสของเอกสาร เปลี่ยนทีหลังไม่ได้ */
+    document.getElementById('stuName').value = s ? s.name : '';
+    document.getElementById('stuForm').classList.add('show');
+    setMsg('setMsg', '');
+    document.getElementById('stuName').focus();
+  }
+
+  function closeStudentForm() {
+    document.getElementById('stuForm').classList.remove('show');
+    document.getElementById('stuName').value = '';
+  }
+
+  function saveStudentForm() {
+    var no   = Number(document.getElementById('stuNo').value);
+    var name = document.getElementById('stuName').value.trim();
+    if (!no || no < 1 || no > 999) { setMsg('setMsg', 'เลขที่ต้องเป็นตัวเลข 1-999', 'err'); return; }
+    if (!name)                     { setMsg('setMsg', 'ยังไม่ได้ใส่ชื่อ', 'err'); return; }
+
+    var dup = students.find(function(x){ return x.no === no; });
+    var editing = document.getElementById('stuNo').disabled;
+    if (!editing && dup && !confirm('เลขที่ ' + no + ' มีชื่อ "' + dup.name + '" อยู่แล้ว\nจะเปลี่ยนเป็น "' + name + '" ไหม (ยอดเงินคงเดิม)')) return;
+
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        showSpinner(false);
+        if (!r.success) { setMsg('setMsg', r.message, 'err'); return; }
+        closeStudentForm();
+        toast('บันทึก ' + name + ' แล้ว', 'ok');
+        loadStudents();
+      })
+      .withFailureHandler(function(){ showSpinner(false); setMsg('setMsg', 'บันทึกไม่สำเร็จ', 'err'); })
+      .saveStudent(no, name);
+  }
+
+  function removeStudent(no) {
+    var s = students.find(function(x){ return x.no === no; });
+    if (!s) return;
+    var warn = s.balance > 0
+      ? '\n\nนักเรียนคนนี้ยังมียอดคงเหลือ ฿' + fmt(s.balance) +
+        '\nการลบไม่ได้คืนเงินและไม่ได้ลบประวัติรายการเดิม'
+      : '';
+    if (!confirm('ลบ "' + s.name + '" (เลขที่ ' + s.no + ') ออกจากรายชื่อ?' + warn)) return;
+
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        showSpinner(false);
+        if (!r.success) { setMsg('setMsg', r.message, 'err'); return; }
+        toast('ลบ ' + s.name + ' แล้ว', 'ok');
+        delete photoMap[no];
+        loadStudents();
+      })
+      .withFailureHandler(function(){ showSpinner(false); setMsg('setMsg', 'ลบไม่สำเร็จ', 'err'); })
+      .deleteStudent(no);
+  }
+
+  /* ── รูปประจำตัว: ย่อในเครื่องก่อนเก็บ ไม่ให้เอกสารบวม ── */
+  var photoTargetNo = null;
+
+  function pickPhoto(no) {
+    photoTargetNo = no;
+    if (photoMap[no] && confirm('เลขที่ ' + no + ' มีรูปอยู่แล้ว\nกด "ตกลง" เพื่อลบรูปเดิม หรือ "ยกเลิก" เพื่อเลือกรูปใหม่')) {
+      savePhoto(no, '');
+      return;
+    }
+    var input = document.getElementById('photoInput');
+    input.value = '';
+    input.click();
+  }
+
+  function shrinkImage(file, maxSide, targetKB) {
+    return new Promise(function(resolve, reject) {
+      var fr = new FileReader();
+      fr.onerror = function(){ reject(new Error('อ่านไฟล์ไม่สำเร็จ')); };
+      fr.onload = function() {
+        var img = new Image();
+        img.onerror = function(){ reject(new Error('ไฟล์นี้ไม่ใช่รูปภาพ')); };
+        img.onload = function() {
+          var scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          var w = Math.max(1, Math.round(img.width * scale));
+          var h = Math.max(1, Math.round(img.height * scale));
+          var c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          var q = 0.72, url = c.toDataURL('image/jpeg', q);
+          /* base64 ยาวกว่าไฟล์จริงราว 1.37 เท่า ลดคุณภาพจนกว่าจะพอดีเป้า */
+          while (url.length > targetKB * 1024 * 1.37 && q > 0.35) {
+            q -= 0.12;
+            url = c.toDataURL('image/jpeg', q);
+          }
+          resolve(url);
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  function savePhoto(no, dataUrl) {
+    var s = students.find(function(x){ return x.no === no; });
+    if (!s) return;
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        showSpinner(false);
+        if (!r.success) { setMsg('setMsg', r.message, 'err'); return; }
+        if (dataUrl) photoMap[no] = dataUrl; else delete photoMap[no];
+        toast(dataUrl ? 'อัปเดตรูปของ ' + s.name + ' แล้ว' : 'ลบรูปของ ' + s.name + ' แล้ว', 'ok');
+        renderAll();
+      })
+      .withFailureHandler(function(){ showSpinner(false); setMsg('setMsg', 'บันทึกรูปไม่สำเร็จ', 'err'); })
+      .saveStudent(no, s.name, dataUrl);
+  }
+
+  /* ── นำเข้า / ส่งออก ── */
+  /* แยกช่องแบบ CSV จริง — ชื่อที่มีลูกน้ำอยู่ในเครื่องหมายคำพูดต้องไม่ถูกหั่น */
+  function splitCsvLine(line) {
+    var out = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      if (inQ) {
+        if (ch !== '"') { cur += ch; }
+        else if (line.charAt(i + 1) === '"') { cur += '"'; i++; }
+        else { inQ = false; }
+      }
+      else if (ch === '"') { inQ = true; }
+      else if (ch === ',' || ch === String.fromCharCode(9)) { out.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  function parseStudentLines(text) {
+    var out = [], seen = {}, auto = 0;
+    String(text || '').split(/\r?\n/).forEach(function(line) {
+      line = line.trim();
+      if (!line) return;
+      var cells = splitCsvLine(line);
+      if (/^(เลขที่|no|number|ลำดับ)$/i.test(cells[0])) return;    /* หัวตารางจาก Excel */
+
+      var no = 0, name = '';
+      if (cells.length >= 2 && /^\d{1,3}$/.test(cells[0])) {
+        no = Number(cells[0]);
+        /* ไฟล์ที่ส่งออกจากระบบมีคอลัมน์ยอดเงินต่อท้าย ตัดทิ้งไม่ให้ปนเข้าไปในชื่อ
+           ส่วนไฟล์ที่แยกชื่อ-นามสกุลคนละช่อง ให้ต่อกลับเป็นชื่อเดียว */
+        var rest = cells.slice(1).filter(function(c){ return c !== ''; });
+        if (rest.length > 1 && /^-?[0-9]+([.][0-9]+)?$/.test(rest[rest.length - 1])) rest.pop();
+        name = rest.join(' ');
+      } else {
+        var m = line.match(/^(\d{1,3})[\s.\-)]+(.+)$/);
+        if (m) { no = Number(m[1]); name = m[2].trim(); }
+        else   { name = cells[0]; }
+      }
+      name = String(name || '').trim();
+      if (!name) return;
+      if (!no) { do { auto++; } while (seen[auto]); no = auto; }
+      if (seen[no]) return;                                        /* เลขที่ซ้ำ ใช้บรรทัดแรกที่เจอ */
+      seen[no] = true;
+      out.push({ no: no, name: name });
+    });
+    return out.sort(function(a, b){ return a.no - b.no; });
+  }
+
+  function importRows() { return parseStudentLines(document.getElementById('importText').value); }
+
+  function csvCell(v) {
+    v = String(v == null ? '' : v);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  function downloadCsv(filename, text) {
+    /* ใส่ BOM ให้ Excel อ่านภาษาไทยไม่เพี้ยน */
+    var blob = new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+
+  function bindSettings() {
+    document.getElementById('btnAddStu').addEventListener('click', function(){ openStudentForm(0); });
+    document.getElementById('btnStuSave').addEventListener('click', saveStudentForm);
+    document.getElementById('btnStuCancel').addEventListener('click', closeStudentForm);
+    document.getElementById('stuName').addEventListener('keydown', function(e){ if (e.key === 'Enter') saveStudentForm(); });
+
+    document.getElementById('photoInput').addEventListener('change', function() {
+      var file = this.files && this.files[0];
+      if (!file || !photoTargetNo) return;
+      showSpinner(true);
+      shrinkImage(file, 320, 20)
+        .then(function(url){ showSpinner(false); savePhoto(photoTargetNo, url); })
+        .catch(function(e){ showSpinner(false); setMsg('setMsg', e.message || 'อ่านรูปไม่สำเร็จ', 'err'); });
+    });
+
+    document.getElementById('btnImportOpen').addEventListener('click', function() {
+      document.getElementById('importBox').classList.add('show');
+      setMsg('importMsg', '');
+      document.getElementById('importText').focus();
+    });
+    document.getElementById('btnImportClose').addEventListener('click', function() {
+      document.getElementById('importBox').classList.remove('show');
+      document.getElementById('importPreview').innerHTML = '';
+    });
+
+    document.getElementById('importFile').addEventListener('change', function() {
+      var file = this.files && this.files[0];
+      if (!file) return;
+      var fr = new FileReader();
+      fr.onload = function() {
+        document.getElementById('importText').value = String(fr.result || '').replace(/^﻿/, '');
+        document.getElementById('btnImportPreview').click();
+      };
+      fr.onerror = function(){ setMsg('importMsg', 'อ่านไฟล์ไม่สำเร็จ', 'err'); };
+      fr.readAsText(file, 'utf-8');
+      this.value = '';
+    });
+
+    document.getElementById('btnImportPreview').addEventListener('click', function() {
+      var rows = importRows();
+      setMsg('importMsg', rows.length ? 'อ่านได้ ' + rows.length + ' คน' : 'ยังไม่พบรายชื่อ', rows.length ? 'ok' : 'err');
+      document.getElementById('importPreview').innerHTML = rows.length
+        ? '<div class="stu-scroll"><table class="stu-table"><thead><tr><th style="width:52px">เลขที่</th><th>ชื่อ-สกุล</th><th class="r">สถานะ</th></tr></thead><tbody>' +
+          rows.map(function(r) {
+            var has = students.some(function(s){ return s.no === r.no; });
+            return '<tr><td>' + r.no + '</td><td>' + esc(r.name) + '</td><td class="r">' +
+              (has ? 'มีอยู่แล้ว' : 'เพิ่มใหม่') + '</td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '';
+    });
+
+    document.getElementById('btnImportRun').addEventListener('click', function() {
+      var rows = importRows();
+      if (!rows.length) { setMsg('importMsg', 'ยังไม่พบรายชื่อ', 'err'); return; }
+      var overwrite = document.getElementById('importOverwrite').checked;
+      var msg = 'นำเข้านักเรียน ' + rows.length + ' คน\n' +
+        (overwrite ? 'เลขที่ที่มีอยู่แล้วจะถูกเขียนทับชื่อ (ยอดเงินคงเดิม)'
+                   : 'เลขที่ที่มีอยู่แล้วจะถูกข้าม') + '\nดำเนินการต่อ?';
+      if (!confirm(msg)) return;
+
+      showSpinner(true);
+      google.script.run
+        .withSuccessHandler(function(r) {
+          showSpinner(false);
+          if (!r.success) { setMsg('importMsg', r.message, 'err'); return; }
+          setMsg('importMsg', 'นำเข้าเรียบร้อย — เพิ่มใหม่ ' + r.added + ' คน · แก้ชื่อ ' + r.updated +
+                              ' คน · ข้าม ' + r.skipped + ' คน', 'ok');
+          document.getElementById('importText').value = '';
+          document.getElementById('importPreview').innerHTML = '';
+          loadStudents();
+        })
+        .withFailureHandler(function(){ showSpinner(false); setMsg('importMsg', 'นำเข้าไม่สำเร็จ', 'err'); })
+        .importStudents(rows, overwrite);
+    });
+
+    document.getElementById('btnExport').addEventListener('click', function() {
+      if (!students.length) { setMsg('setMsg', 'ยังไม่มีรายชื่อให้ส่งออก', 'err'); return; }
+      var csv = 'เลขที่,ชื่อ-สกุล,ยอดคงเหลือ\n' + students.map(function(s) {
+        return [csvCell(s.no), csvCell(s.name), csvCell(s.balance)].join(',');
+      }).join('\n') + '\n';
+      var d = new Date();
+      downloadCsv('รายชื่อนักเรียน-' + d.toISOString().slice(0, 10) + '.csv', csv);
+    });
+
+    document.getElementById('btnTemplate').addEventListener('click', function() {
+      downloadCsv('ไฟล์ตัวอย่างรายชื่อนักเรียน.csv',
+        'เลขที่,ชื่อ-สกุล\n1,สมชาย ใจดี\n2,สมหญิง รักเรียน\n3,อารีย์ มานะ\n');
+    });
+  }
+
+  bindSettings();
+
   function fmt(n){ return Number(n).toLocaleString('th-TH'); }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
