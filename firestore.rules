@@ -36,6 +36,25 @@ service cloud.firestore {
                 ];
     }
 
+    /* ── โหมดเข้มงวด (ไม่บังคับ) ──
+       ปกติผู้ปกครองใช้บัญชี anonymous ที่แอปสร้างให้ แล้วอ่านได้ทุกคนที่มีลิงก์
+       ถ้าอยากให้เฉพาะคนที่ระบุไว้เข้าดูได้ ให้ทำ 2 อย่าง
+         1. ใส่อีเมล Google ของผู้ปกครองในรายการข้างล่างนี้
+         2. เปลี่ยน  allow read: if signedIn();  เป็น  allow read: if isViewer();
+            (ทั้งสองที่ใต้ /savings) แล้วปิด provider Anonymous ใน Console
+
+       ⚠ ห้ามเอาอีเมลผู้ปกครองไปใส่ใน isTeacher() เด็ดขาด เพราะ isTeacher()
+         คุมสิทธิ์ "เขียน" ด้วย ผู้ปกครองจะแก้ยอดเงินได้ทันที */
+    function isViewer() {
+      return isTeacher()
+             || (signedIn()
+                 && request.auth.token.email_verified == true
+                 && request.auth.token.email in [
+                      // 'parent1@gmail.com',
+                      // 'parent2@gmail.com'
+                    ]);
+    }
+
     /* รายชื่อครู (ถ้าอยากคุมจากฐานข้อมูลแทนการแก้ไฟล์นี้)
        เอกสาร config/teachers เก็บฟิลด์ emails เป็น list ของอีเมล
        หมายเหตุ: ตัวคุมสิทธิ์จริงยังเป็น isTeacher() ด้านบนเสมอ

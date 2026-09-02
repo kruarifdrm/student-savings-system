@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#c8521c">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -320,6 +320,12 @@
     .stu-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 0.72rem; font-weight: 800; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .stu-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .stu-scroll { overflow-x: auto; }
+    .ver-box { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding: 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-lg); font-size: 0.82rem; color: var(--muted); }
+    .ver-box b { color: var(--text); }
+    .ver-msg { flex-basis: 100%; font-size: 0.8rem; }
+    .ver-msg.ok  { color: var(--deposit); font-weight: 700; }
+    .ver-msg.new { color: var(--primary); font-weight: 700; }
+    .ver-msg a { color: inherit; }
 
     /* ══ Print ══ */
     #print-all-area, #print-one-area, #print-dash-area, #print-hist-area { display: none; }
@@ -378,8 +384,10 @@
     .filter-month-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface); font-size: 0.9rem; font-weight: 600; color: var(--text); font-family: inherit; cursor: pointer; appearance: auto; }
   </style>
 </head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer
+        integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer
+        integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <body>
 
 <!-- ══ Print areas ══ -->
@@ -588,6 +596,12 @@
       <div class="set-msg" id="setMsg"></div>
       <div class="stu-scroll" id="stu-list"><div class="empty-state">กำลังโหลด...</div></div>
       <input type="file" id="photoInput" accept="image/*" style="display:none">
+
+      <div class="ver-box">
+        <span>เวอร์ชันที่ใช้อยู่ <b id="appVer">—</b></span>
+        <button class="mini-btn" id="btnCheckUpdate">ตรวจสอบเวอร์ชันใหม่</button>
+        <span class="ver-msg" id="verMsg"></span>
+      </div>
     </div>
 
     <!-- ประวัติ -->
@@ -785,8 +799,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       document.body.innerHTML = '<div style="font-family:sans-serif;padding:40px;line-height:1.9;color:#333">' +
         '<h2>ยังไม่ได้ตั้งค่า Firebase</h2>' +
-        '<p>เปิดไฟล์ <code>firebase-config.js</code> แล้วใส่ค่าของโปรเจกต์ Firebase ของคุณ<br>' +
-        'วิธีทำอ่านได้ใน <code>README.md</code></p></div>';
+        '<p>ก๊อบไฟล์ <code>firebase-config.example.js</code> เป็น <code>firebase-config.js</code><br>' +
+        'แล้วใส่ค่าของโปรเจกต์ Firebase ของคุณลงไป — วิธีทำอ่านได้ใน <code>README.md</code></p></div>';
     });
     throw new Error('firebase-config.js ยังไม่ได้ตั้งค่า');
   }
@@ -971,14 +985,16 @@
       if (!name)                     return Promise.resolve({ success: false, message: 'ยังไม่ได้ใส่ชื่อ' });
 
       var ref = colStu.doc(String(no));
+      var isNew = false;
       return ref.get().then(function(d) {
+        isNew = !d.exists;
         var data = { no: no, name: name };
         if (typeof photo === 'string') data.photo = photo;   /* ส่ง '' มาคือลบรูป */
-        if (!d.exists) data.balance = 0;                     /* คนใหม่เริ่มที่ศูนย์ ไม่ทับยอดคนเก่า */
+        if (isNew) data.balance = 0;                         /* คนใหม่เริ่มที่ศูนย์ ไม่ทับยอดคนเก่า */
         return ref.set(data, { merge: true });
       }).then(function() {
         _stuCache = null;
-        return { success: true, isNew: true };
+        return { success: true, isNew: isNew };
       }).catch(function(e) {
         return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
       });
@@ -1117,7 +1133,6 @@
   var histStu    = null;
   var userRole   = '';   // 'teacher' | 'parent'
   var TABS_ALL    = ['dashboard','deposit','withdraw','history','settings'];
-  var TABS_PARENT = ['dashboard','history'];
 
   /* ══ Role screen ══ */
   function selectRole(role) {
@@ -1461,6 +1476,7 @@
           if (userRole === 'teacher') {
             renderGrid('deposit-grid', 'deposit');
             renderGrid('withdraw-grid', 'withdraw');
+            renderSettings();
           }
           /* โหลดประวัติใหม่ตามโหมดที่อยู่ */
           if (histStu && detailContext === 'dashboard') {
@@ -1681,7 +1697,7 @@
       .withSuccessHandler(function(data){
         showSpinner(false);
         document.getElementById('po-body').innerHTML = (data&&data.length)
-          ? data.map(function(tx){ var dep=tx.type==='ฝาก'; return '<tr><td>'+tx.date+' '+tx.time+'</td><td><span class="p-badge '+(dep?'dep':'wd')+'">'+tx.type+'</span></td><td class="r '+(dep?'green':'red')+'">'+(dep?'+':'−')+'฿'+fmt(tx.amount)+'</td><td class="r">฿'+fmt(tx.balance)+'</td></tr>'; }).join('')
+          ? data.map(function(tx){ var dep=tx.type==='ฝาก'; return '<tr><td>'+esc(tx.date)+' '+esc(tx.time)+'</td><td><span class="p-badge '+(dep?'dep':'wd')+'">'+esc(tx.type)+'</span></td><td class="r '+(dep?'green':'red')+'">'+(dep?'+':'−')+'฿'+fmt(tx.amount)+'</td><td class="r">฿'+fmt(tx.balance)+'</td></tr>'; }).join('')
           : '<tr><td colspan="4" style="text-align:center;color:#667085;padding:16px">ยังไม่มีรายการ</td></tr>';
         openShareOverlay(histStu.name, 'print-one-area', 'printing-one', histStu.name);
       })
@@ -1763,6 +1779,67 @@
 
   /* ── Helpers ── */
 
+
+  /* ══ เวอร์ชันและการอัปเดต ══
+     ครูที่โหลดไปใช้จะไม่มีทางรู้ว่ามีของใหม่ ถ้าไม่มีอะไรบอก
+     จึงเทียบเลขเวอร์ชันกับ release ล่าสุดบน GitHub ให้ (ไม่ส่งข้อมูลอะไรออกไป) */
+  var APP_VERSION = '1.1.0';
+
+  /* fork ไปเป็นของตัวเองให้เปลี่ยนเป็น 'เจ้าของ/ชื่อ-repo' หรือใส่ '' เพื่อปิดการตรวจสอบ */
+  var UPDATE_REPO = typeof window.UPDATE_REPO === 'string'
+    ? window.UPDATE_REPO : 'kruarifdrm/student-savings-system';
+
+  /* เทียบเวอร์ชันแบบ x.y.z — คืน 1 เมื่อ a ใหม่กว่า b */
+  function cmpVersion(a, b) {
+    var pa = String(a).replace(/^v/, '').split('.');
+    var pb = String(b).replace(/^v/, '').split('.');
+    for (var i = 0; i < 3; i++) {
+      var na = Number(pa[i]) || 0, nb = Number(pb[i]) || 0;
+      if (na !== nb) return na > nb ? 1 : -1;
+    }
+    return 0;
+  }
+
+  function checkForUpdate() {
+    var msg = document.getElementById('verMsg');
+    if (!UPDATE_REPO) { msg.textContent = 'ปิดการตรวจสอบไว้'; return; }
+    var btn = document.getElementById('btnCheckUpdate');
+    btn.disabled = true;
+    msg.className = 'ver-msg';
+    msg.textContent = 'กำลังตรวจสอบ...';
+
+    fetch('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest')
+      .then(function(r) {
+        if (r.status === 404) throw new Error('ยังไม่มีเวอร์ชันเผยแพร่บน GitHub');
+        if (!r.ok) throw new Error('ติดต่อ GitHub ไม่ได้ (' + r.status + ')');
+        return r.json();
+      })
+      .then(function(j) {
+        btn.disabled = false;
+        var latest = String(j.tag_name || '').replace(/^v/, '');
+        if (!latest) { msg.textContent = 'อ่านเลขเวอร์ชันไม่ได้'; return; }
+        if (cmpVersion(latest, APP_VERSION) > 0) {
+          msg.className = 'ver-msg new';
+          msg.innerHTML = '';
+          msg.appendChild(document.createTextNode('มีเวอร์ชันใหม่ v' + latest + ' — '));
+          var a = document.createElement('a');
+          a.href = j.html_url || ('https://github.com/' + UPDATE_REPO + '/releases');
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = 'ดูว่ามีอะไรใหม่และวิธีอัปเดต';
+          msg.appendChild(a);
+        } else {
+          msg.className = 'ver-msg ok';
+          msg.textContent = 'ใช้เวอร์ชันล่าสุดอยู่แล้ว';
+        }
+      })
+      .catch(function(e) {
+        btn.disabled = false;
+        msg.className = 'ver-msg';
+        msg.textContent = e.message || 'ตรวจสอบไม่สำเร็จ';
+      });
+  }
+
   /* ══ ตั้งค่า: จัดการรายชื่อนักเรียน ══ */
 
   function setMsg(id, text, cls) {
@@ -1793,7 +1870,11 @@
           '<td>' + esc(s.name) + '</td>' +
           '<td class="r">฿' + fmt(s.balance) + '</td>' +
           '<td class="acts r">' +
-            '<button class="mini-btn" data-act="photo" data-no="' + s.no + '">รูป</button> ' +
+            '<button class="mini-btn" data-act="photo" data-no="' + s.no + '">' +
+              (photoMap[s.no] ? 'เปลี่ยนรูป' : 'ใส่รูป') + '</button> ' +
+            (photoMap[s.no]
+              ? '<button class="mini-btn danger" data-act="photodel" data-no="' + s.no + '">ลบรูป</button> '
+              : '') +
             '<button class="mini-btn" data-act="edit"  data-no="' + s.no + '">แก้ไข</button> ' +
             '<button class="mini-btn danger" data-act="del" data-no="' + s.no + '">ลบ</button>' +
           '</td></tr>';
@@ -1802,9 +1883,10 @@
     el.querySelectorAll('.mini-btn').forEach(function(b) {
       b.addEventListener('click', function() {
         var no = Number(b.dataset.no);
-        if (b.dataset.act === 'edit')      openStudentForm(no);
-        else if (b.dataset.act === 'del')  removeStudent(no);
-        else                               pickPhoto(no);
+        if (b.dataset.act === 'edit')          openStudentForm(no);
+        else if (b.dataset.act === 'del')      removeStudent(no);
+        else if (b.dataset.act === 'photodel') removePhoto(no);
+        else                                   pickPhoto(no);
       });
     });
   }
@@ -1854,10 +1936,14 @@
     var s = students.find(function(x){ return x.no === no; });
     if (!s) return;
     var warn = s.balance > 0
-      ? '\n\nนักเรียนคนนี้ยังมียอดคงเหลือ ฿' + fmt(s.balance) +
-        '\nการลบไม่ได้คืนเงินและไม่ได้ลบประวัติรายการเดิม'
+      ? '\n\nนักเรียนคนนี้ยังมียอดคงเหลือ ฿' + fmt(s.balance) + ' การลบไม่ได้คืนเงิน'
       : '';
-    if (!confirm('ลบ "' + s.name + '" (เลขที่ ' + s.no + ') ออกจากรายชื่อ?' + warn)) return;
+    /* ประวัติผูกกับเลขที่ ไม่ได้ผูกกับชื่อ ถ้าเอาเลขที่นี้ไปใช้กับคนใหม่
+       คนใหม่จะเห็นรายการของคนเดิมทั้งหมด ต้องบอกครูให้ชัดก่อนกดลบ */
+    if (!confirm('ลบ "' + s.name + '" (เลขที่ ' + s.no + ') ออกจากรายชื่อ?' + warn +
+        '\n\nประวัติรายการเดิมจะยังอยู่ในระบบ ถ้าเพิ่มนักเรียนใหม่ด้วยเลขที่ ' + s.no +
+        ' คนใหม่จะเห็นประวัติของคนเดิมด้วย' +
+        '\nถ้าไม่ต้องการแบบนั้น ให้ใช้เลขที่อื่นกับคนใหม่')) return;
 
     showSpinner(true);
     google.script.run
@@ -1877,13 +1963,16 @@
 
   function pickPhoto(no) {
     photoTargetNo = no;
-    if (photoMap[no] && confirm('เลขที่ ' + no + ' มีรูปอยู่แล้ว\nกด "ตกลง" เพื่อลบรูปเดิม หรือ "ยกเลิก" เพื่อเลือกรูปใหม่')) {
-      savePhoto(no, '');
-      return;
-    }
     var input = document.getElementById('photoInput');
     input.value = '';
     input.click();
+  }
+
+  function removePhoto(no) {
+    var s = students.find(function(x){ return x.no === no; });
+    if (!s) return;
+    if (!confirm('ลบรูปของ "' + s.name + '" (เลขที่ ' + no + ')?')) return;
+    savePhoto(no, '');
   }
 
   function shrinkImage(file, maxSide, targetKB) {
@@ -1949,8 +2038,11 @@
     return out;
   }
 
+  /* อ่านสองรอบ: รอบแรกจองเลขที่ที่ครูระบุมาเอง รอบสองค่อยเติมเลขว่างให้บรรทัดที่เหลือ
+     ถ้าไล่เลขทีละบรรทัดแบบเดิม บรรทัดที่ระบุเลขเองจะชนกับเลขที่แจกไปแล้วและหายเงียบ ๆ
+     คืนค่าเป็น { rows, skipped } เพื่อบอกครูได้ว่ามีบรรทัดตกหล่นกี่บรรทัด */
   function parseStudentLines(text) {
-    var out = [], seen = {}, auto = 0;
+    var parsed = [];
     String(text || '').split(/\r?\n/).forEach(function(line) {
       line = line.trim();
       if (!line) return;
@@ -1972,12 +2064,29 @@
       }
       name = String(name || '').trim();
       if (!name) return;
-      if (!no) { do { auto++; } while (seen[auto]); no = auto; }
-      if (seen[no]) return;                                        /* เลขที่ซ้ำ ใช้บรรทัดแรกที่เจอ */
-      seen[no] = true;
-      out.push({ no: no, name: name });
+      parsed.push({ no: no, name: name });
     });
-    return out.sort(function(a, b){ return a.no - b.no; });
+
+    var rows = [], seen = {}, skipped = 0;
+
+    parsed.forEach(function(p) {                 /* รอบแรก — บรรทัดที่ระบุเลขที่มาเอง */
+      if (!p.no) return;
+      if (seen[p.no]) { skipped++; return; }     /* เลขที่ซ้ำกันเอง ใช้บรรทัดแรกที่เจอ */
+      seen[p.no] = true;
+      rows.push({ no: p.no, name: p.name });
+    });
+
+    var auto = 0;
+    parsed.forEach(function(p) {                 /* รอบสอง — เติมเลขที่ว่างให้บรรทัดที่ไม่ได้ระบุ */
+      if (p.no) return;
+      do { auto++; } while (seen[auto]);
+      if (auto > 999) { skipped++; return; }
+      seen[auto] = true;
+      rows.push({ no: auto, name: p.name });
+    });
+
+    rows.sort(function(a, b){ return a.no - b.no; });
+    return { rows: rows, skipped: skipped };
   }
 
   function importRows() { return parseStudentLines(document.getElementById('importText').value); }
@@ -2000,6 +2109,8 @@
   }
 
   function bindSettings() {
+    document.getElementById('appVer').textContent = 'v' + APP_VERSION;
+    document.getElementById('btnCheckUpdate').addEventListener('click', checkForUpdate);
     document.getElementById('btnAddStu').addEventListener('click', function(){ openStudentForm(0); });
     document.getElementById('btnStuSave').addEventListener('click', saveStudentForm);
     document.getElementById('btnStuCancel').addEventListener('click', closeStudentForm);
@@ -2038,8 +2149,9 @@
     });
 
     document.getElementById('btnImportPreview').addEventListener('click', function() {
-      var rows = importRows();
-      setMsg('importMsg', rows.length ? 'อ่านได้ ' + rows.length + ' คน' : 'ยังไม่พบรายชื่อ', rows.length ? 'ok' : 'err');
+      var parsed = importRows(), rows = parsed.rows;
+      var note = parsed.skipped ? '  (ข้าม ' + parsed.skipped + ' บรรทัดที่เลขที่ซ้ำกัน)' : '';
+      setMsg('importMsg', rows.length ? 'อ่านได้ ' + rows.length + ' คน' + note : 'ยังไม่พบรายชื่อ', rows.length ? 'ok' : 'err');
       document.getElementById('importPreview').innerHTML = rows.length
         ? '<div class="stu-scroll"><table class="stu-table"><thead><tr><th style="width:52px">เลขที่</th><th>ชื่อ-สกุล</th><th class="r">สถานะ</th></tr></thead><tbody>' +
           rows.map(function(r) {
@@ -2051,10 +2163,11 @@
     });
 
     document.getElementById('btnImportRun').addEventListener('click', function() {
-      var rows = importRows();
+      var parsed = importRows(), rows = parsed.rows;
       if (!rows.length) { setMsg('importMsg', 'ยังไม่พบรายชื่อ', 'err'); return; }
       var overwrite = document.getElementById('importOverwrite').checked;
       var msg = 'นำเข้านักเรียน ' + rows.length + ' คน\n' +
+        (parsed.skipped ? 'ข้าม ' + parsed.skipped + ' บรรทัดที่เลขที่ซ้ำกัน\n' : '') +
         (overwrite ? 'เลขที่ที่มีอยู่แล้วจะถูกเขียนทับชื่อ (ยอดเงินคงเดิม)'
                    : 'เลขที่ที่มีอยู่แล้วจะถูกข้าม') + '\nดำเนินการต่อ?';
       if (!confirm(msg)) return;
@@ -2080,7 +2193,10 @@
         return [csvCell(s.no), csvCell(s.name), csvCell(s.balance)].join(',');
       }).join('\n') + '\n';
       var d = new Date();
-      downloadCsv('รายชื่อนักเรียน-' + d.toISOString().slice(0, 10) + '.csv', csv);
+      var stamp = d.getFullYear() + '-' +
+                  ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+                  ('0' + d.getDate()).slice(-2);
+      downloadCsv('รายชื่อนักเรียน-' + stamp + '.csv', csv);
     });
 
     document.getElementById('btnTemplate').addEventListener('click', function() {

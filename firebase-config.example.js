@@ -1,6 +1,10 @@
 /* ══════════════════════════════════════════════════════════════
-   ตั้งค่าโปรเจกต์ Firebase ของโรงเรียนคุณที่ไฟล์นี้ไฟล์เดียว
-   (index.html และ setup.html อ่านค่าจากที่นี่ทั้งคู่)
+   ไฟล์ตัวอย่าง — ก๊อบไฟล์นี้เป็น  firebase-config.js  ก่อนใช้งาน
+
+     Windows :  copy firebase-config.example.js firebase-config.js
+     Mac/Linux: cp   firebase-config.example.js firebase-config.js
+
+   แล้วแก้ค่าในไฟล์ที่ก๊อบมา (ตัวจริงไม่ถูกเก็บใน git จึงไม่ชนเวลาดึงอัปเดต)
 
    หาค่าได้จาก  Firebase Console → ⚙ Project settings → Your apps
                  → Web app → SDK setup and configuration → Config

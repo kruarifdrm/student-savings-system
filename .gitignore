@@ -1,4 +1,7 @@
 # ค่าเฉพาะเครื่อง / เฉพาะโรงเรียน
+#   ตัวจริงสร้างจาก firebase-config.example.js — ไม่เก็บใน git
+#   เพื่อไม่ให้อีเมลครูหลุด และเวลา git pull จะได้ไม่ชนกับของที่แก้ไว้
+firebase-config.js
 .firebaserc
 .firebase/
 firebase-debug.log
