@@ -103,6 +103,7 @@
     .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; }
     .pw-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
     .pw-err { font-size: 0.8rem; color: var(--withdraw); font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+    .pw-err a { color: inherit; text-decoration: underline; }
     .pw-submit { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
     .pw-submit { display: flex; align-items: center; justify-content: center; gap: 9px; }
     .pw-submit:hover { opacity: .88; }
@@ -1115,9 +1116,16 @@
       if (r.reason === 'not-allowed') {
         err.textContent = 'อีเมล ' + r.email + ' ยังไม่มีสิทธิ์ครู';
       } else if (r.code === 'auth/unauthorized-domain') {
-        /* เจอบ่อยตอนติดตั้งครั้งแรก โดเมนของเว็บยังไม่อยู่ในรายชื่อที่อนุญาต */
-        err.textContent = 'โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่ม ' + location.hostname +
-          ' ที่ Firebase Console → Authentication → Settings → Authorized domains';
+        /* เจอบ่อยตอนติดตั้งครั้งแรก โดเมนของเว็บยังไม่อยู่ในรายชื่อที่อนุญาต
+           ใส่ลิงก์ตรงไปหน้าตั้งค่าของโปรเจกต์ให้ครูกดได้เลย */
+        var pid  = (window.FIREBASE_CONFIG && FIREBASE_CONFIG.projectId) || '';
+        var link = pid ? 'https://console.firebase.google.com/project/' +
+                         encodeURIComponent(pid) + '/authentication/settings' : '';
+        err.innerHTML = 'โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่ม <b></b> ที่ ' +
+          (link ? '<a href="' + link + '" target="_blank" rel="noopener">Firebase Console → ' +
+                  'Authentication → Settings → Authorized domains</a>'
+                : 'Firebase Console → Authentication → Settings → Authorized domains');
+        err.querySelector('b').textContent = location.hostname;
       } else {
         err.textContent = 'เข้าสู่ระบบไม่สำเร็จ' + (r.code ? ' (' + r.code + ')' : '');
       }
