@@ -1,0 +1,26 @@
+name: เสนอฟีเจอร์
+description: อยากให้ระบบทำอะไรเพิ่ม
+title: "[ขอฟีเจอร์] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: ตอนนี้ติดปัญหาอะไรในการใช้งานจริง
+      placeholder: เช่น ต้องรวมยอดออมรายเดือนส่งฝ่ายวิชาการ แต่ต้องนั่งบวกเอง
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: อยากให้เป็นแบบไหน
+    validations:
+      required: true
+  - type: dropdown
+    id: help
+    attributes:
+      label: พอจะช่วยทำเองได้ไหม
+      options:
+        - "แค่เสนอไอเดีย"
+        - "ช่วยทดสอบให้ได้"
+        - "พอเขียนโค้ดเองได้ ขอคำแนะนำหน่อย"
