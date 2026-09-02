@@ -103,6 +103,7 @@
     .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; }
     .pw-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
     .pw-err { font-size: 0.8rem; color: var(--withdraw); font-weight: 700; min-height: 18px; margin-bottom: 8px; }
+    .pw-err a { color: inherit; text-decoration: underline; }
     .pw-submit { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 800; cursor: pointer; font-family: inherit; transition: opacity var(--tr); }
     .pw-submit { display: flex; align-items: center; justify-content: center; gap: 9px; }
     .pw-submit:hover { opacity: .88; }
@@ -114,20 +115,6 @@
     .parent-btn.show { display: block; }
     .parent-btn:hover { opacity: .88; }
 
-    /* ── Setup screen ── */
-    .setup-screen { display: none; min-height: 100dvh; place-items: center; padding: 24px; background: linear-gradient(135deg, #fde8dc 0%, #f3f6f9 60%, #eef2f6 100%); }
-    .setup-screen.show { display: grid; }
-    .setup-card { width: min(100%, 380px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px 28px; box-shadow: var(--shadow-md); text-align: center; }
-    .setup-icon { width: 72px; height: 72px; background: var(--primary-2); border-radius: var(--radius-lg); display: grid; place-items: center; margin: 0 auto 20px; }
-    .setup-icon svg { width: 38px; height: 38px; color: var(--primary); }
-    .setup-card h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
-    .setup-card p  { color: var(--muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 24px; }
-    .setup-btn { width: 100%; padding: 15px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 800; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity var(--tr); }
-    .setup-btn:disabled { opacity: .5; cursor: wait; }
-    .setup-btn svg { width: 18px; height: 18px; }
-    .setup-result { margin-top: 16px; padding: 12px 16px; border-radius: var(--radius); font-size: 0.88rem; font-weight: 700; display: none; }
-    .setup-result.ok  { background: var(--deposit-bg);  color: var(--deposit);  display: block; }
-    .setup-result.err { background: var(--withdraw-bg); color: var(--withdraw); display: block; }
 
     /* ── App ── */
     .app { display: none; flex-direction: column; min-height: 100dvh; }
@@ -138,9 +125,6 @@
     .brand { font-weight: 800; font-size: 1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
     .brand svg { width: 22px; height: 22px; flex-shrink: 0; }
     .topbar-right { display: flex; align-items: center; gap: 8px; }
-    .ss-link { font-size: 0.78rem; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 4px; text-decoration: none; padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--line); transition: background var(--tr), color var(--tr); }
-    .ss-link:hover { background: var(--surface-2); color: var(--text); }
-    .ss-link svg { width: 14px; height: 14px; }
     .role-badge { font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-pill); }
     .role-badge.teacher { background: var(--primary-2); color: var(--primary); }
     .role-badge.parent  { background: var(--deposit-bg); color: var(--deposit); }
@@ -268,8 +252,6 @@
     .type-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 800; margin-bottom: 9px; }
     .type-pill.deposit  { background: var(--deposit-bg);  color: var(--deposit); }
     .type-pill.withdraw { background: var(--withdraw-bg); color: var(--withdraw); }
-    .tx-type.pe-pay { color: #1a73e8; }
-    .tx-dot.pe-pay  { background: #1a73e8; }
     .np-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
     .np-bal  { font-size: 0.82rem; color: var(--muted); margin-top: 3px; font-weight: 600; }
     .amount-display { background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 13px 20px; text-align: center; font-size: 1.9rem; font-weight: 800; color: var(--text); margin-bottom: 14px; min-height: 60px; display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px; transition: border-color var(--tr); }
@@ -461,25 +443,6 @@
 </div>
 
 <!-- ══ Setup ══ -->
-<div class="setup-screen" id="setupScreen">
-  <div class="setup-card">
-    <div class="setup-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2m0 0a2 2 0 0 1 2-2h12v4"/>
-        <path d="M3 6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h17a2 2 0 0 0 2-2v-6"/>
-        <path d="M18 12h2a2 2 0 0 1 0 4h-2a2 2 0 0 1 0-4z" fill="currentColor" stroke="none"/>
-      </svg>
-    </div>
-    <h1>ระบบออมทรัพย์นักเรียน</h1>
-    <p>ยังไม่ได้ตั้งค่า กด "ตั้งค่าระบบ" เพื่อสร้าง Google Sheet อัตโนมัติ</p>
-    <button class="setup-btn" id="setupBtn">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      ตั้งค่าระบบ
-    </button>
-    <div class="setup-result" id="setupResult"></div>
-  </div>
-</div>
-
 <!-- ══ App ══ -->
 <div class="app" id="mainApp">
 
@@ -494,10 +457,6 @@
     </div>
     <div class="topbar-right">
       <span class="role-badge" id="roleBadge"></span>
-      <a class="ss-link" id="ssLink" href="#" target="_blank">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Sheet
-      </a>
       <button class="logout-btn" onclick="doLogout()" title="ออกจากระบบ">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
@@ -739,7 +698,7 @@
 <script src="firebase-config.js"></script>
 <script>
 /* ══ Firestore data layer — google.script.run compatible shim ══
-   โครงสร้าง: savings/app (config) + subcollections: students, transactions, pe, peTx */
+   โครงสร้าง: savings/app (config) + subcollections: students, transactions */
 (function() {
   if (!window.FIREBASE_CONFIG || /YOUR_/.test(window.FIREBASE_CONFIG.apiKey || 'YOUR_')) {
     document.addEventListener('DOMContentLoaded', function() {
@@ -755,8 +714,9 @@
   var appDoc  = db.collection('savings').doc('app');
   var colStu  = appDoc.collection('students');
   var colTx   = appDoc.collection('transactions');
-  var colPE   = appDoc.collection('pe');
-  var colPETx = appDoc.collection('peTx');
+
+  /* ดึงประวัติสูงสุดกี่รายการต่อการเปิด 1 ครั้ง (กันโควตาอ่านบานปลายตอนปลายปี) */
+  var TX_LIMIT = 500;
 
   /* ══ ตัวตนผู้ใช้ ══
      ผู้ปกครอง/นักเรียน = บัญชี anonymous (อ่านอย่างเดียว)
@@ -767,9 +727,21 @@
   var TEACHERS_FALLBACK = (window.TEACHER_EMAILS || []).map(function(e){ return String(e).toLowerCase(); });
   var authListeners = [];
 
-  function isTeacherUser() {
-    var u = auth.currentUser;
-    return !!(u && !u.isAnonymous);
+  /* สถานะครู = ล็อกอิน Google อยู่ "และ" อีเมลอยู่ในรายชื่อที่อนุญาต
+     เก็บเป็น flag เพราะที่เรียกใช้ต้องการคำตอบทันที (sync) */
+  var _isTeacher = false;
+
+  function isTeacherUser() { return _isTeacher; }
+
+  function refreshTeacherFlag(user) {
+    if (!user || user.isAnonymous || !user.email) {
+      _isTeacher = false;
+      return Promise.resolve(false);
+    }
+    return allowedTeachers().then(function(list) {
+      _isTeacher = list.indexOf(String(user.email).toLowerCase()) !== -1;
+      return _isTeacher;
+    }).catch(function() { _isTeacher = false; return false; });
   }
 
   /* รอให้ Firebase มีตัวตนให้ก่อน ทุกคำสั่งอ่าน-เขียนต้องผ่านตรงนี้
@@ -785,8 +757,10 @@
         });
         return;
       }
-      if (!settled) { settled = true; resolve(user); }
-      authListeners.forEach(function(f){ try { f(user); } catch (e) { console.error(e); } });
+      refreshTeacherFlag(user).then(function() {
+        if (!settled) { settled = true; resolve(user); }
+        authListeners.forEach(function(f){ try { f(user); } catch (e) { console.error(e); } });
+      });
     });
   });
 
@@ -815,7 +789,8 @@
       return auth.signInWithPopup(provider).then(function(res) {
         var email = ((res.user && res.user.email) || '').toLowerCase();
         return allowedTeachers().then(function(list) {
-          if (list.indexOf(email) !== -1) return { ok: true, email: email };
+          if (list.indexOf(email) !== -1) { _isTeacher = true; return { ok: true, email: email }; }
+          _isTeacher = false;
           return auth.signOut().then(function(){
             return { ok: false, reason: 'not-allowed', email: email };
           });
@@ -867,18 +842,6 @@
 
   var api = {
 
-    checkSetup: function() {
-      return appDoc.get().then(function(d) {
-        var url = (d.exists && d.data().backupSheetUrl) || '#';
-        return { ready: true, url: url };
-      }).catch(function(){ return { ready: true, url: '#' }; });
-    },
-
-    initSpreadsheet: function() {
-      return Promise.resolve('ระบบ Firebase พร้อมใช้งานแล้ว');
-    },
-
-
     getStudents: function() {
       return fetchStudents(true).then(function(list) {
         return list.map(function(s){ return { no: s.no, name: s.name, balance: Number(s.balance)||0 }; });
@@ -920,131 +883,45 @@
     },
 
     getAllTransactions: function() {
-      return colTx.orderBy('ts', 'desc').get().then(function(snap) {
+      return colTx.orderBy('ts', 'desc').limit(TX_LIMIT).get().then(function(snap) {
         return snap.docs.map(mapTxDoc);
       });
     },
 
+    /* กรองที่เซิร์ฟเวอร์ ไม่ดึงทั้งคอลเลกชันมากรองเอง
+       ต้องมี composite index (studentNo asc + ts desc) — อยู่ใน firestore.indexes.json */
     getStudentHistory: function(studentNo) {
-      return colTx.orderBy('ts', 'desc').get().then(function(snap) {
-        return snap.docs.map(mapTxDoc).filter(function(tx){ return tx.studentNo === Number(studentNo); });
-      });
+      return colTx.where('studentNo', '==', Number(studentNo))
+                  .orderBy('ts', 'desc').limit(TX_LIMIT).get()
+                  .then(function(snap) { return snap.docs.map(mapTxDoc); });
     },
 
-    deleteTransaction: function(studentNo, date, time, type, amount) {
-      return colTx.where('studentNo', '==', Number(studentNo)).get().then(function(snap) {
-        var docs = snap.docs;
-        var target = null;
-        for (var i = 0; i < docs.length; i++) {
-          var x = docs[i].data();
-          if (String(x.date) === String(date) && String(x.time) === String(time) &&
-              String(x.type) === String(type) && Number(x.amount) === Number(amount)) {
-            target = docs[i]; break;
-          }
-        }
-        if (!target) return { success: false, message: 'ไม่พบรายการที่ต้องการลบ' };
-
-        var txType = String(type);
-        var chain = target.ref.delete();
-
-        // ย้อนยอด PE เมื่อลบรายการชุดพละ
-        if (txType === 'หักค่าพละ' || txType === 'จ่ายค่าชุดพละ') {
-          chain = chain.then(function() {
-            return colPE.doc(String(studentNo)).get().then(function(pd) {
-              if (!pd.exists) return;
-              var pe = pd.data();
-              var fee = Number(pe.fee) || 0;
-              var newPaid = Math.max(0, (Number(pe.paid) || 0) - Number(amount));
-              return pd.ref.update({ paid: newPaid, remaining: fee - newPaid });
-            });
-          });
-        }
-
-        // คำนวณยอดออมใหม่จากรายการที่เหลือ (จ่ายค่าชุดพละ ไม่กระทบยอดออม)
-        return chain.then(function() {
-          return colTx.where('studentNo', '==', Number(studentNo)).get();
-        }).then(function(snap2) {
-          var newBalance = 0;
-          snap2.docs.forEach(function(d2) {
-            var x2 = d2.data(), t2 = String(x2.type);
-            if (t2 === 'ฝาก') newBalance += Number(x2.amount);
-            else if (t2 === 'ถอน' || t2 === 'หักค่าพละ') newBalance -= Number(x2.amount);
-          });
-          return colStu.doc(String(studentNo)).update({ balance: newBalance }).then(function() {
-            return { success: true, newBalance: newBalance, type: txType };
-          });
-        });
-      }).catch(function(e){ return { success: false, message: 'ลบไม่สำเร็จ: ' + (e.message || e) }; });
-    },
-
-    getPEStatus: function() {
-      return colPE.orderBy('no').get().then(function(snap) {
-        return snap.docs.map(function(d) {
-          var x = d.data();
-          return { no: Number(x.no), name: x.name, fee: Number(x.fee)||0, paid: Number(x.paid)||0, remaining: Number(x.remaining)||0 };
-        });
-      });
-    },
-
-    recordPEPayment: function(studentNo, amount) {
-      amount = Number(amount);
-      if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
-      var peRef = colPE.doc(String(studentNo));
-      var stuRef = colStu.doc(String(studentNo));
+    /* ลบรายการด้วย id ของเอกสารโดยตรง (ไม่เดาจากวัน-เวลา-จำนวนเงิน ที่ซ้ำกันได้)
+       ทำใน transaction เดียว: อ่านรายการ → ปรับยอดนักเรียนตามชนิดรายการ → ลบ
+       ปรับแบบ "หักกลับเฉพาะรายการนี้" ไม่ได้คำนวณยอดใหม่จากศูนย์
+       ยอดยกมาที่ครูตั้งไว้เองจึงไม่ถูกล้าง และถ้าเน็ตหลุดกลางทางจะไม่มีอะไรเปลี่ยน */
+    deleteTransaction: function(txId) {
+      if (!txId) return Promise.resolve({ success: false, message: 'ไม่พบรายการที่ต้องการลบ' });
+      var txRef = colTx.doc(String(txId));
       return db.runTransaction(function(t) {
-        return Promise.all([t.get(peRef), t.get(stuRef)]).then(function(res) {
-          var pd = res[0], sd = res[1];
-          if (!pd.exists) throw { _biz: true, message: 'ไม่พบรายชื่อนักเรียน' };
-          var pe = pd.data();
-          var fee = Number(pe.fee) || 0;
-          var oldPaid = Number(pe.paid) || 0;
-          var newPaid = Math.min(fee, oldPaid + amount);
-          var delta = newPaid - oldPaid;
-          var savingsBalance = sd.exists ? (Number(sd.data().balance) || 0) : 0;
-          var p = nowParts();
-          t.update(peRef, { paid: newPaid, remaining: fee - newPaid });
-          t.set(colPETx.doc(), { ts: p.ts, date: p.date, time: p.time, no: Number(studentNo), name: pe.name, amount: delta, cumulative: newPaid });
-          t.set(colTx.doc(),   { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo), name: pe.name, type: 'จ่ายค่าชุดพละ', amount: delta, balance: savingsBalance });
-          return { success: true, name: pe.name, paid: newPaid, remaining: fee - newPaid, fee: fee };
+        return t.get(txRef).then(function(td) {
+          if (!td.exists) throw { _biz: true, message: 'ไม่พบรายการที่ต้องการลบ' };
+          var x = td.data();
+          var stuRef = colStu.doc(String(x.studentNo));
+          return t.get(stuRef).then(function(sd) {
+            if (!sd.exists) throw { _biz: true, message: 'ไม่พบข้อมูลนักเรียน' };
+            var cur    = Number(sd.data().balance) || 0;
+            var amount = Number(x.amount) || 0;
+            /* ฝากเคยบวกยอด → ลบรายการต้องหักคืน / ถอนเคยลบยอด → ต้องคืนกลับ */
+            var newBalance = String(x.type) === 'ฝาก' ? cur - amount : cur + amount;
+            t.update(stuRef, { balance: newBalance });
+            t.delete(txRef);
+            return { success: true, newBalance: newBalance, type: String(x.type) };
+          });
         });
       }).catch(function(e) {
         if (e && e._biz) return { success: false, message: e.message };
-        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
-      });
-    },
-
-    deductPEFromSavings: function(studentNo, amount) {
-      amount = Number(amount);
-      if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
-      var peRef = colPE.doc(String(studentNo));
-      var stuRef = colStu.doc(String(studentNo));
-      return db.runTransaction(function(t) {
-        return Promise.all([t.get(stuRef), t.get(peRef)]).then(function(res) {
-          var sd = res[0], pd = res[1];
-          if (!sd.exists) throw { _biz: true, message: 'ไม่พบนักเรียน' };
-          if (!pd.exists) throw { _biz: true, message: 'ไม่พบข้อมูลค่าชุดพละ' };
-          var s = sd.data(), pe = pd.data();
-          var currentBalance = Number(s.balance) || 0;
-          var fee = Number(pe.fee) || 0, oldPaid = Number(pe.paid) || 0;
-          var peRemaining = Number(pe.remaining) || 0;
-          if (currentBalance <= 0) throw { _biz: true, message: 'ยอดเงินออมไม่เพียงพอ' };
-          if (peRemaining <= 0)    throw { _biz: true, message: 'จ่ายค่าชุดพละครบแล้ว' };
-
-          var deduct     = Math.min(amount, peRemaining, currentBalance);
-          var newBalance = currentBalance - deduct;
-          var newPaid    = oldPaid + deduct;
-          var p = nowParts();
-
-          t.update(stuRef, { balance: newBalance });
-          t.set(colTx.doc(),   { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo), name: s.name, type: 'หักค่าพละ', amount: deduct, balance: newBalance });
-          t.update(peRef, { paid: newPaid, remaining: fee - newPaid });
-          t.set(colPETx.doc(), { ts: p.ts, date: p.date, time: p.time, no: Number(studentNo), name: s.name, amount: deduct, cumulative: newPaid });
-
-          return { success: true, name: s.name, deducted: deduct, newSavings: newBalance, pePaid: newPaid, peRemaining: fee - newPaid, peFee: fee };
-        });
-      }).catch(function(e) {
-        if (e && e._biz) return { success: false, message: e.message };
-        return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) };
+        return { success: false, message: 'ลบไม่สำเร็จ: ' + (e.message || e) };
       });
     }
   };
@@ -1055,9 +932,7 @@
   Runner.prototype.withFailureHandler = function(f){ this._err = f || this._err; return this; };
   /* คำสั่งที่เขียนฐานข้อมูล ต้องเป็นครูที่ล็อกอิน Google อยู่เท่านั้น
      (firestore.rules กันจริงอีกชั้นฝั่งเซิร์ฟเวอร์) */
-  var WRITE_METHODS = {
-    saveTransaction: 1, deleteTransaction: 1, recordPEPayment: 1, deductPEFromSavings: 1
-  };
+  var WRITE_METHODS = { saveTransaction: 1, deleteTransaction: 1 };
 
   Object.keys(api).forEach(function(name) {
     Runner.prototype[name] = function() {
@@ -1115,9 +990,16 @@
       if (r.reason === 'not-allowed') {
         err.textContent = 'อีเมล ' + r.email + ' ยังไม่มีสิทธิ์ครู';
       } else if (r.code === 'auth/unauthorized-domain') {
-        /* เจอบ่อยตอนติดตั้งครั้งแรก โดเมนของเว็บยังไม่อยู่ในรายชื่อที่อนุญาต */
-        err.textContent = 'โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่ม ' + location.hostname +
-          ' ที่ Firebase Console → Authentication → Settings → Authorized domains';
+        /* เจอบ่อยตอนติดตั้งครั้งแรก โดเมนของเว็บยังไม่อยู่ในรายชื่อที่อนุญาต
+           ใส่ลิงก์ตรงไปหน้าตั้งค่าของโปรเจกต์ให้ครูกดได้เลย */
+        var pid  = (window.FIREBASE_CONFIG && FIREBASE_CONFIG.projectId) || '';
+        var link = pid ? 'https://console.firebase.google.com/project/' +
+                         encodeURIComponent(pid) + '/authentication/settings' : '';
+        err.innerHTML = 'โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่ม <b></b> ที่ ' +
+          (link ? '<a href="' + link + '" target="_blank" rel="noopener">Firebase Console → ' +
+                  'Authentication → Settings → Authorized domains</a>'
+                : 'Firebase Console → Authentication → Settings → Authorized domains');
+        err.querySelector('b').textContent = location.hostname;
       } else {
         err.textContent = 'เข้าสู่ระบบไม่สำเร็จ' + (r.code ? ' (' + r.code + ')' : '');
       }
@@ -1141,35 +1023,8 @@
     document.getElementById('tab-deposit').classList.toggle('hidden-tab',  role==='parent');
     document.getElementById('tab-withdraw').classList.toggle('hidden-tab', role==='parent');
 
-    /* ซ่อนปุ่ม toggle PE สำหรับ parent (ผ่าน CSS class บน body) */
-    document.body.classList.toggle('role-parent', role==='parent');
-
-    /* hide Sheet link for parent */
-    document.getElementById('ssLink').style.display = role==='teacher' ? '' : 'none';
-
-    google.script.run
-      .withSuccessHandler(function(info) {
-        if (info.ready) {
-          var ssl = document.getElementById('ssLink');
-          ssl.href = info.url;
-          if (!info.url || info.url === '#') ssl.style.display = 'none';
-          document.getElementById('mainApp').classList.add('show');
-          loadStudents();
-        } else {
-          if (role==='teacher') {
-            document.getElementById('setupScreen').classList.add('show');
-          } else {
-            document.getElementById('mainApp').classList.add('show');
-            renderAll();
-          }
-        }
-      })
-      .withFailureHandler(function(err) {
-        showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่', true);
-        document.getElementById('loginScreen').classList.add('show');
-        document.getElementById('mainApp').classList.remove('show');
-      })
-      .checkSetup();
+    document.getElementById('mainApp').classList.add('show');
+    loadStudents();
   }
 
   function doLogout() {
@@ -1179,7 +1034,6 @@
     userRole = '';
     students = [];
     document.getElementById('mainApp').classList.remove('show');
-    document.getElementById('setupScreen').classList.remove('show');
     /* reset role screen */
     document.getElementById('cardTeacher').classList.remove('selected');
     document.getElementById('cardParent').classList.remove('selected');
@@ -1208,16 +1062,6 @@
       toast('เซสชันครูหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'err');
       doLogout();
     }
-  });
-
-  /* ── Setup ── */
-  document.getElementById('setupBtn').addEventListener('click', function() {
-    var btn = this, res = document.getElementById('setupResult');
-    btn.disabled = true; btn.textContent = 'กำลังสร้าง...'; res.className = 'setup-result';
-    google.script.run
-      .withSuccessHandler(function(msg) { res.textContent = msg; res.className = 'setup-result ok'; setTimeout(function(){ window.location.reload(); }, 2000); })
-      .withFailureHandler(function(e) { res.textContent = 'เกิดข้อผิดพลาด: '+(e.message||e); res.className='setup-result err'; btn.disabled=false; btn.textContent='ลองอีกครั้ง'; })
-      .initSpreadsheet();
   });
 
   /* ── Load students ── */
@@ -1295,7 +1139,7 @@
   function personIcon() { var t = document.getElementById('icon-person'); return t ? t.innerHTML : ''; }
   function photoImg(no) {
     var u = photoMap[no];
-    return u ? '<img src="'+u+'" loading="lazy" alt="">' : '';
+    return u ? '<img src="'+esc(u)+'" loading="lazy" alt="">' : '';
   }
   function cardIconHtml(s) {
     return photoImg(s.no) || personIcon();
@@ -1345,10 +1189,10 @@
     if (!txCache.length) { el.innerHTML = '<div class="empty-state">ยังไม่มีรายการ</div>'; return; }
     var canDel = userRole === 'teacher';
     el.innerHTML = txCache.map(function(tx, i) {
-      var dep = tx.type === 'ฝาก', isPEPay = tx.type === 'จ่ายค่าชุดพละ';
-      var cls = dep ? 'dep' : isPEPay ? 'pe-pay' : 'wd';
-      var typeLabel = dep ? 'ฝาก' : isPEPay ? 'จ่ายค่าชุดพละ' : tx.type === 'หักค่าพละ' ? 'หักค่าพละ' : 'ถอน';
-      var sign = dep ? '+' : isPEPay ? '' : '−';
+      var dep = tx.type === 'ฝาก';
+      var cls = dep ? 'dep' : 'wd';
+      var typeLabel = dep ? 'ฝาก' : 'ถอน';
+      var sign = dep ? '+' : '−';
       var delBtn = canDel
         ? '<button class="tx-del" data-i="'+i+'" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
         : '';
@@ -1399,10 +1243,10 @@
     if (!txCache.length){ el.innerHTML='<div class="empty-state">ยังไม่มีรายการ</div>'; return; }
     var canDel = userRole === 'teacher';
     el.innerHTML = txCache.map(function(tx, i){
-      var dep=tx.type==='ฝาก', isPEPay=tx.type==='จ่ายค่าชุดพละ';
-      var cls=dep?'dep':isPEPay?'pe-pay':'wd';
-      var typeLabel=dep?'ฝาก':isPEPay?'จ่ายค่าชุดพละ':tx.type==='หักค่าพละ'?'หักค่าพละ':'ถอน';
-      var sign=dep?'+':isPEPay?'':'−';
+      var dep=tx.type==='ฝาก';
+      var cls=dep?'dep':'wd';
+      var typeLabel=dep?'ฝาก':'ถอน';
+      var sign=dep?'+':'−';
       var delBtn = canDel
         ? '<button class="tx-del" data-i="'+i+'" title="ลบรายการ"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
         : '';
@@ -1430,8 +1274,7 @@
     var tx = txCache[idx];
     if (!tx) return;
     pendingDelIdx = idx;
-    var dep = tx.type === 'ฝาก', isPEPay = tx.type === 'จ่ายค่าชุดพละ', isPEDed = tx.type === 'หักค่าพละ';
-    var label = dep ? '+ ฝาก' : isPEPay ? 'จ่ายค่าชุดพละ' : isPEDed ? '− หักค่าพละ' : '− ถอน';
+    var label = tx.type === 'ฝาก' ? '+ ฝาก' : '− ถอน';
     document.getElementById('confirmDesc').innerHTML =
       '<strong>'+label+' ฿'+fmt(tx.amount)+'</strong><br>'+
       esc(tx.date)+' '+esc(tx.time)+'<br>คงเหลือหลังรายการ ฿'+fmt(tx.balance);
@@ -1483,7 +1326,7 @@
         pendingDelIdx = -1;
       })
       .withFailureHandler(function(){ showSpinner(false); toast('เกิดข้อผิดพลาด','err'); pendingDelIdx = -1; })
-      .deleteTransaction(sNo, tx.date, tx.time, tx.type, tx.amount);
+      .deleteTransaction(tx._id);
   });
 
   document.getElementById('backBtn').addEventListener('click', showHistGrid);
@@ -1626,7 +1469,6 @@
     function buildHistContent() {
       var selMonth = document.getElementById('filterMonthSelect').value;
       var filtered = txCache.filter(function(tx) {
-        if (tx.type === 'จ่ายค่าชุดพละ' || tx.type === 'หักค่าพละ') return false;
         if (selType !== 'all' && tx.type !== selType) return false;
         if (selMonth !== 'all') {
           var parts = String(tx.date).split('/');

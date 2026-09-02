@@ -1,0 +1,54 @@
+name: แจ้งบั๊ก
+description: เจอปัญหาระหว่างใช้งาน ระบบทำงานไม่ถูกต้อง
+title: "[บั๊ก] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ขอบคุณที่ช่วยแจ้งครับ 🙏
+        ⚠️ **อย่าใส่ชื่อ-สกุลนักเรียนจริงหรือยอดเงินจริง** ถ้าแนบรูปให้ปิดชื่อก่อน
+  - type: textarea
+    id: what
+    attributes:
+      label: เกิดอะไรขึ้น
+      placeholder: เช่น กดลบรายการฝากแล้วยอดคงเหลือไม่ลด
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: ทำอะไรถึงเจอ (ไล่ทีละขั้น)
+      placeholder: |
+        1. เข้าเป็นครู
+        2. ไปแท็บประวัติ
+        3. กดถังขยะที่รายการแรก
+        4. ยอดในหน้าภาพรวมยังเท่าเดิม
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: คาดว่าควรเป็นอย่างไร
+      placeholder: ยอดควรลดลงตามจำนวนที่ลบ
+  - type: dropdown
+    id: role
+    attributes:
+      label: ตอนนั้นเข้าใช้เป็นใคร
+      options: ["ครู", "ผู้ปกครอง", "ทั้งสองแบบ", "ยังเข้าไม่ได้เลย"]
+  - type: input
+    id: device
+    attributes:
+      label: เครื่องและเบราว์เซอร์
+      placeholder: เช่น iPhone 13 / Safari หรือ Windows / Chrome
+  - type: textarea
+    id: console
+    attributes:
+      label: ข้อความ error (ถ้ามี)
+      description: กด F12 บนคอมเปิดแท็บ Console แล้วคัดลอกบรรทัดสีแดงมาวาง
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: อย่างอื่นที่อยากบอก / รูปหน้าจอ
+      description: ลากรูปมาวางในช่องนี้ได้เลย (ปิดชื่อนักเรียนก่อนนะครับ)

@@ -8,7 +8,9 @@
       "README.md",
       "LICENSE",
       "firestore.rules",
-      ".firebaserc.example"
+      "firestore.indexes.json",
+      ".firebaserc.example",
+      "setup.html"
     ],
     "headers": [
       {
@@ -20,6 +22,7 @@
     ]
   },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

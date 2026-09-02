@@ -44,6 +44,14 @@
   .authbar .who{flex:1;min-width:190px;font-size:.9rem;font-weight:600}
   .authbar .who small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
   .gbtn{display:flex;align-items:center;gap:9px}
+  .ph{width:40px;height:40px;border-radius:9px;object-fit:cover;background:var(--primary-2);display:block}
+  .ph-empty{width:40px;height:40px;border-radius:9px;background:var(--primary-2);display:grid;
+    place-items:center;color:var(--primary);font-weight:800;font-size:.8rem}
+  .ph-btn{font-size:.78rem;font-weight:700;color:var(--primary);cursor:pointer;
+    border:1.5px solid var(--primary);border-radius:8px;padding:3px 9px;display:inline-block}
+  .ph-btn.off{color:var(--muted);border-color:var(--line);cursor:default}
+  .ph-del{font-size:.78rem;color:var(--err);cursor:pointer;margin-left:8px;text-decoration:underline}
+  .ph-cell input[type=file]{display:none}
 </style>
 </head>
 <body>
@@ -91,8 +99,13 @@
   </div>
 
   <div class="card">
-    <h2>2 · ข้อมูลที่มีอยู่ตอนนี้</h2>
+    <h2>2 · ข้อมูลที่มีอยู่ตอนนี้ · รูปประจำตัว</h2>
+    <p class="hint">
+      กด <b>เลือกรูป</b> ในแถวของนักเรียนเพื่อใส่รูปประจำตัว (ระบบย่อรูปให้อัตโนมัติ)<br>
+      ไม่ใส่ก็ได้ — หน้าจอหลักจะใช้เลขที่แทน
+    </p>
     <div class="row" style="margin-top:0"><button class="ghost" id="btnLoad">โหลดรายชื่อปัจจุบัน</button></div>
+    <div class="msg" id="msg2"></div>
     <div id="list"></div>
   </div>
 
@@ -130,7 +143,18 @@
   var auth = firebase.auth();
   var TEACHERS_FALLBACK = (window.TEACHER_EMAILS || []).map(function(e){ return String(e).toLowerCase(); });
 
-  function isTeacher(){ var u = auth.currentUser; return !!(u && !u.isAnonymous); }
+  /* ครู = ล็อกอิน Google อยู่ "และ" อีเมลอยู่ในรายชื่อที่อนุญาต
+     (บัญชี Google อื่นที่ล็อกอินค้างไว้ต้องไม่ได้หน้าจอครู) */
+  var _isTeacher = false;
+  function isTeacher(){ return _isTeacher; }
+
+  function refreshTeacherFlag(user){
+    if (!user || user.isAnonymous || !user.email) { _isTeacher = false; return Promise.resolve(false); }
+    return allowedTeachers().then(function(list){
+      _isTeacher = list.indexOf(String(user.email).toLowerCase()) !== -1;
+      return _isTeacher;
+    }).catch(function(){ _isTeacher = false; return false; });
+  }
 
   function allowedTeachers(){
     return db.doc('config/teachers').get()
@@ -144,12 +168,19 @@
   function paintAuth(){
     var teacher = isTeacher();
     var u = auth.currentUser;
-    $('who').innerHTML = teacher
-      ? 'เข้าสู่ระบบเป็นครู<small>' + esc(u.email || '') + '</small>'
-      : 'ยังไม่ได้เข้าสู่ระบบ<small>ดูข้อมูลได้ แต่ยังบันทึกไม่ได้</small>';
+    if (teacher) {
+      $('who').innerHTML = 'เข้าสู่ระบบเป็นครู<small>' + esc(u.email || '') + '</small>';
+    } else if (u && !u.isAnonymous) {
+      $('who').innerHTML = 'อีเมลนี้ไม่มีสิทธิ์ครู<small>' + esc(u.email || '') +
+        ' — ดูข้อมูลได้ แต่บันทึกไม่ได้</small>';
+    } else {
+      $('who').innerHTML = 'ยังไม่ได้เข้าสู่ระบบ<small>ดูข้อมูลได้ แต่ยังบันทึกไม่ได้</small>';
+    }
     $('btnSignIn').style.display  = teacher ? 'none' : 'flex';
     $('btnSignOut').style.display = teacher ? 'inline-block' : 'none';
     $('btnSave').disabled = !teacher;
+    /* ปุ่มจัดการรูปในตารางขึ้นกับสิทธิ์ ถ้าโหลดตารางไว้แล้วต้อง render ใหม่ */
+    if ($('list').querySelector('table')) $('btnLoad').click();
   }
 
   auth.onAuthStateChanged(function(user){
@@ -160,7 +191,7 @@
       });
       return;
     }
-    paintAuth();
+    refreshTeacherFlag(user).then(paintAuth);
   });
 
   $('btnSignIn').addEventListener('click', function(){
@@ -171,7 +202,8 @@
     auth.signInWithPopup(provider).then(function(res){
       var email = ((res.user && res.user.email) || '').toLowerCase();
       return allowedTeachers().then(function(list){
-        if (list.indexOf(email) !== -1) return;
+        if (list.indexOf(email) !== -1) { _isTeacher = true; paintAuth(); return; }
+        _isTeacher = false;
         return auth.signOut().then(function(){
           alert('อีเมล ' + email + ' ยังไม่มีสิทธิ์ครู\nเพิ่มอีเมลนี้ใน firebase-config.js และ firestore.rules ก่อน');
         });
@@ -204,15 +236,94 @@
     return out.sort(function(a, b){ return a.no - b.no; });
   }
 
-  function renderTable(rows, withBalance){
+  function renderTable(rows, withPhoto){
     if (!rows.length) return '<p class="hint">ยังไม่มีข้อมูล</p>';
     return '<table><thead><tr><th style="width:60px">เลขที่</th><th>ชื่อ-สกุล</th>' +
-      (withBalance ? '<th class="r">ยอดคงเหลือ</th>' : '') + '</tr></thead><tbody>' +
+      (withPhoto ? '<th style="width:150px">รูป</th><th class="r">ยอดคงเหลือ</th>' : '') +
+      '</tr></thead><tbody>' +
       rows.map(function(s){
         return '<tr><td>' + s.no + '</td><td>' + esc(s.name) + '</td>' +
-          (withBalance ? '<td class="r">฿' + (Number(s.balance) || 0).toLocaleString() + '</td>' : '') +
+          (withPhoto ? '<td class="ph-cell">' + photoCell(s) + '</td>' +
+                       '<td class="r">฿' + (Number(s.balance) || 0).toLocaleString() + '</td>' : '') +
           '</tr>';
       }).join('') + '</tbody></table>';
+  }
+
+  /* ── รูปประจำตัวนักเรียน ──
+     ย่อรูปเป็นสี่เหลี่ยมจัตุรัส 240px แล้วเก็บเป็น data URL ในเอกสารนักเรียน
+     (เอกสาร Firestore จำกัด 1 MB — ย่อขนาดนี้เหลือราว 15-30 KB ต่อคน) */
+  var PHOTO_PX = 240, PHOTO_QUALITY = 0.82, PHOTO_MAX_BYTES = 200 * 1024;
+
+  function photoCell(s){
+    var img = s.photo
+      ? '<img class="ph" src="' + esc(s.photo) + '" alt="">'
+      : '<div class="ph-empty">' + s.no + '</div>';
+    var ctrl = isTeacher()
+      ? '<label class="ph-btn">' + (s.photo ? 'เปลี่ยน' : 'เลือกรูป') +
+          '<input type="file" accept="image/*" data-no="' + s.no + '"></label>' +
+        (s.photo ? '<span class="ph-del" data-del="' + s.no + '">ลบรูป</span>' : '')
+      : '<span class="ph-btn off">ต้องเป็นครู</span>';
+    return '<div class="row" style="margin-top:0;gap:8px">' + img + '<div>' + ctrl + '</div></div>';
+  }
+
+  function shrinkPhoto(file){
+    return new Promise(function(resolve, reject){
+      if (!/^image\//.test(file.type)) return reject(new Error('ไฟล์นี้ไม่ใช่รูปภาพ'));
+      var reader = new FileReader();
+      reader.onerror = function(){ reject(new Error('อ่านไฟล์ไม่สำเร็จ')); };
+      reader.onload = function(){
+        var im = new Image();
+        im.onerror = function(){ reject(new Error('เปิดรูปไม่สำเร็จ')); };
+        im.onload = function(){
+          /* ครอบตรงกลางเป็นจัตุรัสก่อน กันรูปยืด */
+          var side = Math.min(im.width, im.height);
+          var sx = (im.width - side) / 2, sy = (im.height - side) / 2;
+          var c = document.createElement('canvas');
+          c.width = c.height = PHOTO_PX;
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, PHOTO_PX, PHOTO_PX);
+          ctx.drawImage(im, sx, sy, side, side, 0, 0, PHOTO_PX, PHOTO_PX);
+          var url = c.toDataURL('image/jpeg', PHOTO_QUALITY);
+          if (url.length > PHOTO_MAX_BYTES) return reject(new Error('รูปใหญ่เกินไป ลองใช้รูปอื่น'));
+          resolve(url);
+        };
+        im.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function savePhoto(no, dataUrl){
+    say('msg2', 'กำลังบันทึกรูปของเลขที่ ' + no + '...', '');
+    return colStu.doc(String(no)).update({ photo: dataUrl })
+      .then(function(){
+        say('msg2', typeof dataUrl === 'string' ? 'บันทึกรูปเลขที่ ' + no + ' แล้ว'
+                                                 : 'ลบรูปเลขที่ ' + no + ' แล้ว', 'ok');
+        $('btnLoad').click();
+      })
+      .catch(function(e){
+        say('msg2', 'บันทึกรูปไม่สำเร็จ: ' + (e.message || e), 'err');
+      });
+  }
+
+  function bindPhotoControls(){
+    $('list').querySelectorAll('input[type=file][data-no]').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var file = inp.files && inp.files[0];
+        inp.value = '';
+        if (!file) return;
+        shrinkPhoto(file)
+          .then(function(url){ return savePhoto(inp.dataset.no, url); })
+          .catch(function(e){ say('msg2', e.message || String(e), 'err'); });
+      });
+    });
+    $('list').querySelectorAll('.ph-del[data-del]').forEach(function(el){
+      el.addEventListener('click', function(){
+        if (!confirm('ลบรูปของเลขที่ ' + el.dataset.del + ' ?')) return;
+        savePhoto(el.dataset.del, firebase.firestore.FieldValue.delete());
+      });
+    });
   }
 
   $('btnPreview').addEventListener('click', function(){
@@ -270,6 +381,7 @@
     $('list').innerHTML = '<p class="hint">กำลังโหลด...</p>';
     colStu.orderBy('no').get().then(function(snap){
       $('list').innerHTML = renderTable(snap.docs.map(function(d){ return d.data(); }), true);
+      bindPhotoControls();
     }).catch(function(e){
       $('list').innerHTML = '<p class="hint">โหลดไม่สำเร็จ: ' + esc(e.message || e) + '</p>';
     });
