@@ -84,7 +84,7 @@ npm install -g firebase-tools
 
 ```
 index.html              ← ตัวแอปจริง
-firebase-config.example.js  ← ก๊อบเป็น firebase-config.js แล้วแก้ค่าในนั้น
+firebase-config.js      ← ไฟล์เดียวที่ต้องแก้
 firestore.rules         ← กฎความปลอดภัย (แก้อีเมลครู)
 firestore.indexes.json  ← index ของฐานข้อมูล
 firebase.json           ← ตั้งค่า deploy
@@ -121,18 +121,8 @@ cd student-savings-system
 
 ## ขั้นที่ 2 · ใส่ค่าลงไฟล์ `firebase-config.js`
 
-ก๊อบไฟล์ตัวอย่างเป็นไฟล์ใช้งานจริงก่อน (ทำครั้งเดียว)
-
-```bash
-copy firebase-config.example.js firebase-config.js     # Windows
-cp   firebase-config.example.js firebase-config.js     # Mac / Linux
-```
-
-> ตัวจริงไม่ถูกเก็บใน git โดยตั้งใจ — อีเมลครูจะได้ไม่หลุดถ้า fork ขึ้น GitHub
-> และเวลาดึงอัปเดตเวอร์ชันใหม่จะได้ไม่ชนกับค่าที่แก้ไว้
-
-แล้วเปิด `firebase-config.js` ด้วย Notepad / VS Code แทนค่าทั้ง 6 บรรทัด
-ด้วยค่าที่ได้จากขั้นที่ 1
+เปิดไฟล์ `firebase-config.js` ด้วย Notepad / VS Code แล้วแทนค่าทั้ง 6 บรรทัด
+ด้วยค่าที่ได้จากขั้นที่ 1 (แก้ในไฟล์นี้ได้เลย ไม่ต้องก๊อบไปไหน)
 
 ```js
 window.FIREBASE_CONFIG = {
@@ -268,7 +258,14 @@ git pull
 firebase deploy --only hosting
 ```
 
-`firebase-config.js` ไม่ถูกเก็บใน git จึงไม่ชนกับของใหม่
+`firebase-config.js` อยู่ใน repo ด้วย ถ้า `git pull` แล้วขึ้นว่าชนกับไฟล์นี้
+ให้เก็บของตัวเองไว้ด้วยคำสั่ง
+
+```bash
+git checkout --ours firebase-config.js
+```
+
+แล้ว pull ใหม่ (หรือใช้วิธี ก ซึ่งไม่ต้องยุ่งกับ git เลย)
 
 ---
 
@@ -331,7 +328,8 @@ Firebase Console → Firestore Database → เมนู ⋮ → **Export**
 
 | อาการ | สาเหตุ / วิธีแก้ |
 |---|---|
-| หน้าจอขึ้น "ยังไม่ได้ตั้งค่า Firebase" | ยังไม่ได้ก๊อบ/แก้ `firebase-config.js` (ขั้นที่ 2) |
+| หน้าจอขึ้น "ยังไม่ได้ตั้งค่า Firebase" | ยังไม่ได้แก้ `firebase-config.js` (ขั้นที่ 2) |
+| แก้ `firebase-config.js` แล้วยังขึ้นข้อความเดิม | ไฟล์ยังไม่ได้ขึ้นเว็บ — เปิด `ชื่อเว็บ/firebase-config.js` ดูว่าเห็นค่าที่ใส่ไหม ถ้ายังเป็นค่าเดิมให้ `firebase deploy --only hosting` ซ้ำ แล้วรีเฟรชแรง ๆ (Ctrl+Shift+R) · ถ้าแก้ด้วย Notepad ระวังไฟล์กลายเป็น `firebase-config.js.txt` |
 | "โหลดข้อมูลไม่สำเร็จ" | ยังไม่ได้ `firebase deploy --only firestore` (ขั้นที่ 4) |
 | `auth/unauthorized-domain` | โดเมนยังไม่อยู่ใน Authorized domains (ขั้นที่ 5) |
 | `auth/operation-not-allowed` | ยังไม่ได้เปิด provider Google หรือ Anonymous (ขั้นที่ 1.3) |

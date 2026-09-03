@@ -9,8 +9,7 @@
       "LICENSE",
       "firestore.rules",
       "firestore.indexes.json",
-      ".firebaserc.example",
-      "firebase-config.example.js"
+      ".firebaserc.example"
     ],
     "headers": [
       {

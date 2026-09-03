@@ -799,8 +799,9 @@
     document.addEventListener('DOMContentLoaded', function() {
       document.body.innerHTML = '<div style="font-family:sans-serif;padding:40px;line-height:1.9;color:#333">' +
         '<h2>ยังไม่ได้ตั้งค่า Firebase</h2>' +
-        '<p>ก๊อบไฟล์ <code>firebase-config.example.js</code> เป็น <code>firebase-config.js</code><br>' +
-        'แล้วใส่ค่าของโปรเจกต์ Firebase ของคุณลงไป — วิธีทำอ่านได้ใน <code>README.md</code></p></div>';
+        '<p>เปิดไฟล์ <code>firebase-config.js</code> แล้วใส่ค่าของโปรเจกต์ Firebase ของคุณ<br>' +
+        'ถ้าใส่ค่าแล้วยังขึ้นข้อความนี้ แปลว่าไฟล์ยังไม่ได้ถูก deploy ขึ้นไปด้วย<br>' +
+        'ลองเปิด <code>ชื่อเว็บ/firebase-config.js</code> ดูว่าเห็นค่าที่ใส่ไว้ไหม — วิธีทำอ่านใน <code>README.md</code></p></div>';
     });
     throw new Error('firebase-config.js ยังไม่ได้ตั้งค่า');
   }
@@ -1783,7 +1784,7 @@
   /* ══ เวอร์ชันและการอัปเดต ══
      ครูที่โหลดไปใช้จะไม่มีทางรู้ว่ามีของใหม่ ถ้าไม่มีอะไรบอก
      จึงเทียบเลขเวอร์ชันกับ release ล่าสุดบน GitHub ให้ (ไม่ส่งข้อมูลอะไรออกไป) */
-  var APP_VERSION = '1.1.0';
+  var APP_VERSION = '1.1.1';
 
   /* fork ไปเป็นของตัวเองให้เปลี่ยนเป็น 'เจ้าของ/ชื่อ-repo' หรือใส่ '' เพื่อปิดการตรวจสอบ */
   var UPDATE_REPO = typeof window.UPDATE_REPO === 'string'

@@ -1,13 +1,12 @@
 /* ══════════════════════════════════════════════════════════════
-   ไฟล์ตัวอย่าง — ก๊อบไฟล์นี้เป็น  firebase-config.js  ก่อนใช้งาน
-
-     Windows :  copy firebase-config.example.js firebase-config.js
-     Mac/Linux: cp   firebase-config.example.js firebase-config.js
-
-   แล้วแก้ค่าในไฟล์ที่ก๊อบมา (ตัวจริงไม่ถูกเก็บใน git จึงไม่ชนเวลาดึงอัปเดต)
+   ตั้งค่าโปรเจกต์ Firebase ของโรงเรียนคุณที่ไฟล์นี้ไฟล์เดียว
+   แก้ค่าในไฟล์นี้ได้เลย ไม่ต้องก๊อบไปไหน
 
    หาค่าได้จาก  Firebase Console → ⚙ Project settings → Your apps
                  → Web app → SDK setup and configuration → Config
+
+   หมายเหตุตอนอัปเดตเวอร์ชันใหม่: ให้ทับเฉพาะ index.html
+   ไฟล์นี้เป็นของโรงเรียนคุณ อย่าเอาของใหม่มาทับ
    ══════════════════════════════════════════════════════════════ */
 
 window.FIREBASE_CONFIG = {
