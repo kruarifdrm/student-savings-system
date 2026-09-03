@@ -257,6 +257,12 @@
     .amount-display { background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 13px 20px; text-align: center; font-size: 1.9rem; font-weight: 800; color: var(--text); margin-bottom: 14px; min-height: 60px; display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px; transition: border-color var(--tr); }
     .amount-display.empty   { color: var(--muted); font-size: 1rem; font-weight: 600; }
     .amount-display.has-val { border-color: var(--primary); }
+    .np-date-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
+    .np-date-row input { padding: 8px 11px; border: 1.5px solid var(--line); border-radius: var(--radius); font-family: inherit; font-size: 0.9rem; font-weight: 700; background: var(--surface-2); color: var(--text); outline: none; }
+    .np-date-row input:focus { border-color: var(--primary); background: var(--surface); }
+    .np-date-row button { padding: 7px 12px; border: 1.5px solid var(--line); border-radius: var(--radius-pill); background: var(--surface); color: var(--text-2); font-family: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+    .np-date-row button:hover { border-color: var(--primary); color: var(--primary); }
+    .np-date-row.past input { border-color: var(--primary); color: var(--primary); }
     .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .num-btn { padding: 16px; border: none; border-radius: var(--radius-lg); font-size: 1.25rem; font-weight: 800; cursor: pointer; background: var(--surface-2); color: var(--text); transition: background var(--tr), transform var(--tr); font-family: inherit; }
     .num-btn:active { transform: scale(.9); background: var(--surface-3); }
@@ -685,6 +691,11 @@
       <div class="np-bal"  id="np-bal"></div>
     </div>
     <div class="amount-display empty" id="amount-display">กรอกจำนวนเงิน</div>
+    <div class="np-date-row" id="np-date-row">
+      <span>วันที่</span>
+      <input type="date" id="np-date">
+      <button type="button" id="btn-today">วันนี้</button>
+    </div>
     <div class="numpad-grid">
       <button class="num-btn" data-v="7">7</button><button class="num-btn" data-v="8">8</button><button class="num-btn" data-v="9">9</button>
       <button class="num-btn" data-v="4">4</button><button class="num-btn" data-v="5">5</button><button class="num-btn" data-v="6">6</button>
@@ -907,6 +918,29 @@
   };
 
 
+  /* รายการที่ครูเลือกวันย้อนหลัง ต้องให้ ts ตรงกับวันนั้นด้วย
+     ไม่งั้นประวัติจะเรียงผิดที่ (ประวัติเรียงตาม ts ไม่ใช่ข้อความวันที่)
+     เวลาใช้เวลาปัจจุบัน เพราะคือเวลาที่ครูบันทึกจริง */
+  function partsForDate(dateISO) {
+    var p = nowParts();
+    if (!dateISO || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateISO))) return p;
+    var a = String(dateISO).split('-');
+    var y = Number(a[0]), m = Number(a[1]), d = Number(a[2]);
+    if (!y || m < 1 || m > 12 || d < 1 || d > 31) return p;
+
+    var now = new Date();
+    var chosen = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), 0, 0);
+    if (isNaN(chosen.getTime())) return p;
+    /* กันวันในอนาคต — พิมพ์ปีผิดทีเดียวประวัติจะเพี้ยนยาว */
+    if (chosen.getTime() > now.getTime() + 86400000) return p;
+
+    return {
+      ts:   chosen.getTime(),
+      date: a[2] + '/' + a[1] + '/' + a[0],
+      time: p.time
+    };
+  }
+
   function nowParts() {
     var d = new Date();
     return {
@@ -955,7 +989,7 @@
       });
     },
 
-    saveTransaction: function(studentNo, type, amount) {
+    saveTransaction: function(studentNo, type, amount, dateISO) {
       amount = Number(amount);
       if (isNaN(amount) || amount <= 0) return Promise.resolve({ success: false, message: 'จำนวนเงินไม่ถูกต้อง' });
       if (type !== 'ฝาก' && type !== 'ถอน') return Promise.resolve({ success: false, message: 'ประเภทรายการไม่ถูกต้อง' });
@@ -969,7 +1003,7 @@
           if (type === 'ถอน' && newBalance < 0) {
             throw { _biz: true, message: 'ยอดไม่เพียงพอ (มีอยู่ ฿' + cur.toLocaleString('th-TH') + ')' };
           }
-          var p = nowParts();
+          var p = partsForDate(dateISO);
           t.update(stuRef, { balance: newBalance });
           t.set(colTx.doc(), { ts: p.ts, date: p.date, time: p.time, studentNo: Number(studentNo),
                                name: s.name, type: type, amount: amount, balance: newBalance });
@@ -1736,6 +1770,21 @@
   document.getElementById('dashPrintOneBtn').addEventListener('click', openPrintOne);
 
   /* ── Numpad ── */
+
+  /* วันที่ของเครื่อง (ไม่ใช่ UTC) ในรูปแบบ yyyy-mm-dd ที่ input[type=date] ใช้ */
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+           ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+           ('0' + d.getDate()).slice(-2);
+  }
+
+  /* ทำเครื่องหมายให้เห็นชัดเวลาเลือกวันย้อนหลัง จะได้ไม่เผลอบันทึกผิดวัน */
+  function markDateRow() {
+    var el = document.getElementById('np-date');
+    document.getElementById('np-date-row').classList.toggle('past', el.value !== todayISO());
+  }
+
   function openNumpad(no, type) {
     if (userRole==='parent') return;
     selStudent = students.find(function(s){ return String(s.no)===String(no); });
@@ -1749,6 +1798,10 @@
     document.getElementById('np-bal').textContent  = 'ยอดปัจจุบัน ฿'+fmt(selStudent.balance);
     document.getElementById('btn-ok').className    = 'btn-ok '+type;
     document.getElementById('overlay').dataset.mode = 'savings';
+    var dateEl = document.getElementById('np-date');
+    dateEl.max   = todayISO();      /* เลือกวันในอนาคตไม่ได้ */
+    dateEl.value = todayISO();      /* ค่าเริ่มต้น = วันนี้ ทุกครั้งที่เปิด */
+    markDateRow();
     refreshDisplay();
     document.getElementById('overlay').classList.add('open');
   }
@@ -1767,6 +1820,11 @@
     });
   });
   document.getElementById('btn-del').addEventListener('click', function(){ inputVal=inputVal.slice(0,-1); refreshDisplay(); });
+  document.getElementById('np-date').addEventListener('change', markDateRow);
+  document.getElementById('btn-today').addEventListener('click', function(){
+    document.getElementById('np-date').value = todayISO();
+    markDateRow();
+  });
   document.getElementById('btn-cancel').addEventListener('click', closeNumpad);
   document.getElementById('overlay').addEventListener('click', function(e){ if(e.target===this) closeNumpad(); });
 
@@ -1789,6 +1847,7 @@
     {
       /* ── ฝาก/ถอนเงินออม ── */
       var no=selStudent.no, type=selType;
+      var dateISO = document.getElementById('np-date').value || todayISO();
       closeNumpad(); showSpinner(true);
       google.script.run
         .withSuccessHandler(function(r){
@@ -1797,11 +1856,13 @@
             var idx=students.findIndex(function(s){return s.no===no;});
             if(idx!==-1) students[idx].balance=r.newBalance;
             renderAll();
-            toast(r.type+' ฿'+fmt(amount)+'  —  '+r.studentName,'ok');
+            var backdated = dateISO !== todayISO();
+            toast(r.type+' ฿'+fmt(amount)+'  —  '+r.studentName +
+                  (backdated ? '  (' + dateISO.split('-').reverse().join('/') + ')' : ''),'ok');
           } else { toast(r.message,'err'); }
         })
         .withFailureHandler(function(){ showSpinner(false); toast('เกิดข้อผิดพลาด กรุณาลองใหม่','err'); })
-        .saveTransaction(no,type,amount);
+        .saveTransaction(no,type,amount,dateISO);
     }
   });
 
@@ -1890,7 +1951,7 @@
   /* ══ เวอร์ชันและการอัปเดต ══
      ครูที่โหลดไปใช้จะไม่มีทางรู้ว่ามีของใหม่ ถ้าไม่มีอะไรบอก
      จึงเทียบเลขเวอร์ชันกับ release ล่าสุดบน GitHub ให้ (ไม่ส่งข้อมูลอะไรออกไป) */
-  var APP_VERSION = '1.2.0';
+  var APP_VERSION = '1.3.0';
 
   /* fork ไปเป็นของตัวเองให้เปลี่ยนเป็น 'เจ้าของ/ชื่อ-repo' หรือใส่ '' เพื่อปิดการตรวจสอบ */
   var UPDATE_REPO = typeof window.UPDATE_REPO === 'string'
