@@ -597,6 +597,21 @@
       <div class="stu-scroll" id="stu-list"><div class="empty-state">กำลังโหลด...</div></div>
       <input type="file" id="photoInput" accept="image/*" style="display:none">
 
+
+      <p class="section-title" style="margin-top:26px">ครูที่เข้าใช้ระบบได้</p>
+      <p class="import-note">
+        เพิ่มอีเมล Google ของครูคนอื่นได้ที่นี่ — <b>มีผลทันที ไม่ต้อง deploy ใหม่</b><br>
+        อีเมลเจ้าของระบบที่ตั้งไว้ใน <code>firestore.rules</code> ตอนติดตั้ง
+        ใช้เข้าระบบได้เสมอแม้ไม่มีชื่อในรายการนี้ (เป็นทางกลับเข้าระบบถ้าเผลอลบจนหมด)
+      </p>
+      <div class="set-form show">
+        <input class="set-input name" id="teacherEmail" type="email"
+               placeholder="teacher@gmail.com" autocomplete="off">
+        <button class="mini-btn primary" id="btnAddTeacher">เพิ่มครู</button>
+      </div>
+      <div class="set-msg" id="teacherMsg"></div>
+      <div class="stu-scroll" id="teacher-list"></div>
+
       <div class="ver-box">
         <span>เวอร์ชันที่ใช้อยู่ <b id="appVer">—</b></span>
         <button class="mini-btn" id="btnCheckUpdate">ตรวจสอบเวอร์ชันใหม่</button>
@@ -820,7 +835,6 @@
      ตัวคุมสิทธิ์จริงคือ firestore.rules ฝั่งเซิร์ฟเวอร์ โค้ดตรงนี้แค่ทำให้ UI ถูกต้อง */
   var auth = firebase.auth();
   var TEACHERS_DOC = 'config/teachers';
-  var TEACHERS_FALLBACK = (window.TEACHER_EMAILS || []).map(function(e){ return String(e).toLowerCase(); });
   var authListeners = [];
 
   /* สถานะครู = ล็อกอิน Google อยู่ "และ" อีเมลอยู่ในรายชื่อที่อนุญาต
@@ -829,15 +843,16 @@
 
   function isTeacherUser() { return _isTeacher; }
 
+  /* กฎอนุญาตให้อ่าน config/teachers ได้เฉพาะครู — ถ้าอ่านผ่านแปลว่าเซิร์ฟเวอร์
+     ถือว่าคนนี้เป็นครูจริง ไม่ต้องมีรายชื่ออีเมลฝั่งหน้าจอให้ค้างเก่าอีกต่อไป */
   function refreshTeacherFlag(user) {
     if (!user || user.isAnonymous || !user.email) {
       _isTeacher = false;
       return Promise.resolve(false);
     }
-    return allowedTeachers().then(function(list) {
-      _isTeacher = list.indexOf(String(user.email).toLowerCase()) !== -1;
-      return _isTeacher;
-    }).catch(function() { _isTeacher = false; return false; });
+    return db.doc(TEACHERS_DOC).get()
+      .then(function()  { _isTeacher = true;  return true;  })
+      .catch(function() { _isTeacher = false; return false; });
   }
 
   /* รอให้ Firebase มีตัวตนให้ก่อน ทุกคำสั่งอ่าน-เขียนต้องผ่านตรงนี้
@@ -860,17 +875,6 @@
     });
   });
 
-  /* รายชื่อครูที่อนุญาต อ่านจาก config/teachers ถ้าอ่านไม่ได้ใช้รายชื่อใน firebase-config.js */
-  function allowedTeachers() {
-    return db.doc(TEACHERS_DOC).get()
-      .then(function(snap) {
-        var list = (snap.exists && snap.data().emails) || [];
-        return (list.length ? list : TEACHERS_FALLBACK)
-                 .map(function(e){ return String(e).toLowerCase(); });
-      })
-      .catch(function(){ return TEACHERS_FALLBACK; });
-  }
-
   window.SavingsAuth = {
     ready:     authReady,
     isTeacher: isTeacherUser,
@@ -884,9 +888,8 @@
       provider.setCustomParameters({ prompt: 'select_account' });
       return auth.signInWithPopup(provider).then(function(res) {
         var email = ((res.user && res.user.email) || '').toLowerCase();
-        return allowedTeachers().then(function(list) {
-          if (list.indexOf(email) !== -1) { _isTeacher = true; return { ok: true, email: email }; }
-          _isTeacher = false;
+        return refreshTeacherFlag(res.user).then(function(ok) {
+          if (ok) return { ok: true, email: email };
           return auth.signOut().then(function(){
             return { ok: false, reason: 'not-allowed', email: email };
           });
@@ -1049,6 +1052,30 @@
       });
     },
 
+    /* ── รายชื่อครู (เพิ่ม-ลบในแอปได้ ไม่ต้อง deploy กฎใหม่) ── */
+    getTeachers: function() {
+      return db.doc(TEACHERS_DOC).get().then(function(d) {
+        var list = (d.exists && d.data().emails) || [];
+        return { success: true, emails: list.map(function(e){ return String(e); }) };
+      }).catch(function(e) {
+        return { success: false, message: 'อ่านรายชื่อครูไม่สำเร็จ: ' + (e.message || e) };
+      });
+    },
+
+    saveTeachers: function(emails) {
+      var out = [], seen = {};
+      (emails || []).forEach(function(e) {
+        e = String(e).trim().toLowerCase();
+        if (!e || e.indexOf('@') < 1 || seen[e]) return;
+        seen[e] = true;
+        out.push(e);
+      });
+      if (out.length > 30) return Promise.resolve({ success: false, message: 'ใส่ได้ไม่เกิน 30 อีเมล' });
+      return db.doc(TEACHERS_DOC).set({ emails: out }, { merge: true })
+        .then(function(){ return { success: true, emails: out }; })
+        .catch(function(e){ return { success: false, message: 'บันทึกไม่สำเร็จ: ' + (e.message || e) }; });
+    },
+
     getAllTransactions: function() {
       return colTx.orderBy('ts', 'desc').limit(TX_LIMIT).get().then(function(snap) {
         return snap.docs.map(mapTxDoc);
@@ -1099,7 +1126,7 @@
   Runner.prototype.withFailureHandler = function(f){ this._err = f || this._err; return this; };
   /* คำสั่งที่เขียนฐานข้อมูล ต้องเป็นครูที่ล็อกอิน Google อยู่เท่านั้น
      (firestore.rules กันจริงอีกชั้นฝั่งเซิร์ฟเวอร์) */
-  var WRITE_METHODS = { saveTransaction: 1, deleteTransaction: 1, saveStudent: 1, deleteStudent: 1, importStudents: 1 };
+  var WRITE_METHODS = { saveTransaction: 1, deleteTransaction: 1, saveStudent: 1, deleteStudent: 1, importStudents: 1, saveTeachers: 1 };
 
   Object.keys(api).forEach(function(name) {
     Runner.prototype[name] = function() {
@@ -1335,7 +1362,7 @@
       document.getElementById('view-'+t).classList.toggle('active', t===name);
     });
     if (name === 'history')  showHistGrid();
-    if (name === 'settings') renderSettings();
+    if (name === 'settings') { renderSettings(); loadTeachers(); }
   }
 
 
@@ -1781,10 +1808,89 @@
   /* ── Helpers ── */
 
 
+
+  /* ══ ครูที่เข้าใช้ระบบได้ ══
+     เก็บใน config/teachers แล้ว firestore.rules อ่านจากที่นั่นตรง ๆ
+     เพิ่มครูจึงมีผลทันทีโดยไม่ต้อง deploy กฎใหม่ */
+  var teacherEmails = [];
+
+  function loadTeachers() {
+    var el = document.getElementById('teacher-list');
+    el.innerHTML = '<div class="empty-state" style="padding:18px">กำลังโหลด...</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r.success) { el.innerHTML = ''; setMsg('teacherMsg', r.message, 'err'); return; }
+        teacherEmails = r.emails || [];
+        renderTeachers();
+      })
+      .withFailureHandler(function(){ el.innerHTML = ''; setMsg('teacherMsg', 'โหลดรายชื่อครูไม่สำเร็จ', 'err'); })
+      .getTeachers();
+  }
+
+  function renderTeachers() {
+    var el = document.getElementById('teacher-list');
+    var me = (SavingsAuth.email() || '').toLowerCase();
+    if (!teacherEmails.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:18px">ยังไม่มีครูในรายการนี้<br>' +
+                     'ตอนนี้เข้าได้เฉพาะอีเมลเจ้าของระบบที่ตั้งไว้ใน firestore.rules</div>';
+      return;
+    }
+    el.innerHTML = '<table class="stu-table"><thead><tr><th>อีเมล</th><th></th></tr></thead><tbody>' +
+      teacherEmails.map(function(e) {
+        var mine = e.toLowerCase() === me;
+        return '<tr><td>' + esc(e) + (mine ? ' <b>(คุณ)</b>' : '') + '</td>' +
+               '<td class="acts r"><button class="mini-btn danger" data-mail="' + esc(e) + '">ลบ</button></td></tr>';
+      }).join('') + '</tbody></table>';
+
+    el.querySelectorAll('.mini-btn').forEach(function(b) {
+      b.addEventListener('click', function(){ removeTeacher(b.dataset.mail); });
+    });
+  }
+
+  function saveTeacherList(list, okMsg) {
+    showSpinner(true);
+    google.script.run
+      .withSuccessHandler(function(r) {
+        showSpinner(false);
+        if (!r.success) { setMsg('teacherMsg', r.message, 'err'); return; }
+        teacherEmails = r.emails || [];
+        renderTeachers();
+        setMsg('teacherMsg', okMsg, 'ok');
+      })
+      .withFailureHandler(function(){ showSpinner(false); setMsg('teacherMsg', 'บันทึกไม่สำเร็จ', 'err'); })
+      .saveTeachers(list);
+  }
+
+  function addTeacher() {
+    var input = document.getElementById('teacherEmail');
+    var mail  = input.value.trim().toLowerCase();
+    if (mail.indexOf('@') < 1 || mail.indexOf('.') < 0) {
+      setMsg('teacherMsg', 'อีเมลไม่ถูกต้อง', 'err');
+      return;
+    }
+    if (teacherEmails.some(function(e){ return e.toLowerCase() === mail; })) {
+      setMsg('teacherMsg', 'อีเมลนี้อยู่ในรายการอยู่แล้ว', 'err');
+      return;
+    }
+    input.value = '';
+    saveTeacherList(teacherEmails.concat([mail]), 'เพิ่ม ' + mail + ' แล้ว — เข้าใช้ได้ทันที');
+  }
+
+  function removeTeacher(mail) {
+    var me = (SavingsAuth.email() || '').toLowerCase();
+    var warn = mail.toLowerCase() === me
+      ? '\n\nนี่คืออีเมลที่คุณใช้อยู่ ถ้าไม่ใช่อีเมลเจ้าของระบบที่ตั้งไว้ใน firestore.rules' +
+        '\nคุณจะหลุดสิทธิ์ครูทันทีที่บันทึก'
+      : '';
+    if (!confirm('ลบ ' + mail + ' ออกจากรายชื่อครู?' + warn)) return;
+    saveTeacherList(teacherEmails.filter(function(e){ return e.toLowerCase() !== mail.toLowerCase(); }),
+                    'ลบ ' + mail + ' แล้ว');
+  }
+
   /* ══ เวอร์ชันและการอัปเดต ══
      ครูที่โหลดไปใช้จะไม่มีทางรู้ว่ามีของใหม่ ถ้าไม่มีอะไรบอก
      จึงเทียบเลขเวอร์ชันกับ release ล่าสุดบน GitHub ให้ (ไม่ส่งข้อมูลอะไรออกไป) */
-  var APP_VERSION = '1.1.1';
+  var APP_VERSION = '1.2.0';
 
   /* fork ไปเป็นของตัวเองให้เปลี่ยนเป็น 'เจ้าของ/ชื่อ-repo' หรือใส่ '' เพื่อปิดการตรวจสอบ */
   var UPDATE_REPO = typeof window.UPDATE_REPO === 'string'
@@ -2113,6 +2219,8 @@
     document.getElementById('appVer').textContent = 'v' + APP_VERSION;
     document.getElementById('btnCheckUpdate').addEventListener('click', checkForUpdate);
     document.getElementById('btnAddStu').addEventListener('click', function(){ openStudentForm(0); });
+    document.getElementById('btnAddTeacher').addEventListener('click', addTeacher);
+    document.getElementById('teacherEmail').addEventListener('keydown', function(e){ if (e.key === 'Enter') addTeacher(); });
     document.getElementById('btnStuSave').addEventListener('click', saveStudentForm);
     document.getElementById('btnStuCancel').addEventListener('click', closeStudentForm);
     document.getElementById('stuName').addEventListener('keydown', function(e){ if (e.key === 'Enter') saveStudentForm(); });

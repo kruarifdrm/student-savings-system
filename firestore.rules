@@ -28,12 +28,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isTeacher() {
+    /* อ่านค่าจาก token แบบมีค่าเริ่มต้น เพราะบัญชี anonymous ไม่มีฟิลด์ email
+       ถ้าอ้างตรง ๆ กฎจะ evaluation error ทุกครั้งที่ผู้ปกครองแตะข้อมูล */
+    function verifiedEmail() {
       return signedIn()
-             && request.auth.token.email_verified == true
-             && request.auth.token.email in [
-                  'kru@example.com'
-                ];
+             && request.auth.token.get('email_verified', false) == true
+             && request.auth.token.get('email', '') != '';
+    }
+
+    /* ── อีเมลเจ้าของระบบ (คนที่ติดตั้ง) ──
+       ใส่ครั้งเดียวตอนติดตั้ง แล้วไม่ต้องแก้ไฟล์นี้อีกเลย
+       ครูคนอื่นเพิ่ม-ลบได้จากแท็บ "ตั้งค่า" ในแอป ซึ่งเขียนลง config/teachers
+
+       ⚠ อีเมลนี้เป็นทางกลับเข้าระบบเสมอ แม้ถูกลบออกจากรายชื่อในแอปแล้ว
+         ห้ามลบทิ้ง ไม่งั้นถ้าเผลอลบครูจนหมดจะไม่มีใครเข้าระบบได้อีก */
+    function ownerEmails() {
+      return [
+        'kru@example.com'
+      ];
+    }
+
+    /* รายชื่อครูที่แก้จากแอปได้ อยู่ที่เอกสาร config/teachers ฟิลด์ emails
+       ต้องเช็ค exists() ก่อน ไม่งั้นตอนยังไม่มีเอกสารกฎจะพัง */
+    function teacherEmails() {
+      /* ใส่ค่าว่างไว้หนึ่งช่องเสมอ เพราะการเทียบ in กับลิสต์เปล่าทำให้กฎ
+         เกิด evaluation error (ผลลัพธ์คือปฏิเสธเหมือนกัน แต่ log อ่านยาก)
+         สตริงว่างไม่มีทางตรงกับอีเมลจริงอยู่แล้ว */
+      return exists(/databases/$(database)/documents/config/teachers)
+             ? get(/databases/$(database)/documents/config/teachers).data.get('emails', ['']).concat([''])
+             : [''];
+    }
+
+    function isTeacher() {
+      return verifiedEmail()
+             && (request.auth.token.email in ownerEmails()
+                 || request.auth.token.email in teacherEmails());
     }
 
     /* ── โหมดเข้มงวด (ไม่บังคับ) ──
@@ -47,8 +76,7 @@ service cloud.firestore {
          คุมสิทธิ์ "เขียน" ด้วย ผู้ปกครองจะแก้ยอดเงินได้ทันที */
     function isViewer() {
       return isTeacher()
-             || (signedIn()
-                 && request.auth.token.email_verified == true
+             || (verifiedEmail()
                  && request.auth.token.email in [
                       // 'parent1@gmail.com',
                       // 'parent2@gmail.com'
